@@ -9,6 +9,7 @@ import psycopg2
 from sqlalchemy.engine import create_engine
 from datetime import datetime, timedelta
 import itertools
+import time
 
 # SQL connection
 engine = create_engine('postgresql+psycopg2://postgres:@localhost/nc?port=5444')
@@ -37,7 +38,7 @@ def populate_database():
     for index, row in df.iterrows():
         # progress report
         if index in progress.keys():
-            print("{0:.2f} percent completed querying task".format(progress[index]))
+            print("{0:s} ----- {1:.0f}% completed querying task".format(time.ctime(), progress[index]*100))
         # what is the time and orig I'm considering
         time_now = row['time_stamp']
         # which destination points are operational/available
