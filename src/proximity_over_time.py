@@ -31,10 +31,13 @@ def populate_database():
     # loop through the data frame and add to each row
     # -> this would be more efficient if I looped through time, service, then orig_id
     total_len = df.shape[0]
+    p = np.linspace(0,1,21)
+    idx = np.round(total_len * p)
+    progress = {idx[i]:p[i] for i in range(len(p))}
     for index, row in df.iterrows():
         # progress report
-        if index/total_len in np.linspace(0,1,21):
-            print("{} percent completed querying task".format(index/total_len))
+        if index in progress.keys():
+            print("{0:.2f} percent completed querying task".format(progress[index]))
         # what is the time and orig I'm considering
         time_now = row['time_stamp']
         # which destination points are operational/available
