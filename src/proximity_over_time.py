@@ -27,30 +27,49 @@ def populate_database():
         outs[service] = import_outages(service)
 
     # init the dataframe
-    df = init_df(services, outs)
+    df = pd.DataFrame(columns = ['id_orig','distance','time_stamp','service'])
 
-    # loop through the data frame and add to each row
-    # -> this would be more efficient if I looped through time, service, then orig_id
-    total_len = df.shape[0]
+    # get the times
+    times = sorted(outs[services[0]].keys())
+
+    # get the distance matrix
+    distances = pd.read_sql('SELECT * FROM distance_matrix', con)
+    distances = distances.set_index('id_dest')
+    distances.distance = pd.to_numeric(distances.distance)
+
+    # block ids
+    id_orig = np.unique(distances.id_orig)
+
+    # loop through the times
+    total_len = len(times)
     p = np.linspace(0,1,21)
     idx = np.round(total_len * p)
     progress = {idx[i]:p[i] for i in range(len(p))}
-    for index, row in df.iterrows():
+    for index in range(total_len):
+        time_stamp = times[index]
         # progress report
         if index in progress.keys():
             print("{0:s} ----- {1:.0f}% completed querying task".format(time.ctime(), progress[index]*100))
-        # what is the time and orig I'm considering
-        time_now = row['time_stamp']
-        # which destination points are operational/available
-        ids_open = outs[row['service']][row['time_stamp']]
-        # what is the distance to the closest destination
-        if len(ids_open) == 0:
-            df.loc[index,'distance'] = np.inf
-        else:
-            sql = 'SELECT MIN(distance) FROM distance_matrix WHERE id_orig = %s AND id_dest IN %s'
-            cursor.execute(sql,(row['id_orig'],ids_open,))
-            # save to df
-            df.loc[index,'distance'] = np.float(cursor.fetchone()[0])
+        # loop services
+        for service in services:
+            # which stores are operating?
+            ids_open = outs[service][time_stamp]
+            if len(ids_open) == 0:
+                df_min = pd.DataFrame({'id_orig' : id_orig})
+                df_min['distance'] = np.inf
+            else:
+                # subset the distance matrix on dest_id
+                dists_sub = distances.loc[ids_open]
+                # get the minimum distance
+                df_min = dists_sub.groupby('id_orig')['distance'].min()
+                # prepare df to append
+                df_min = df_min.to_frame('distance')
+                df_min.reset_index(inplace=True)
+            # prepare df to append
+            df_min['time_stamp'] = time_stamp
+            df_min['service'] = service
+            # append
+            df = df.append(df_min, ignore_index=True)
 
     # add df to sql
     df.to_sql('nearest_in_time', engine)
@@ -65,14 +84,10 @@ def import_outages(service_name):
     import the station and store outages and prepare the dict
     '''
     # import data
-    with open('data/destinations/{}_outages.pk'.format(service_name), 'rb') as fp:
+    with open('data/destinations/{}_operating.pk'.format(service_name), 'rb') as fp:
         outages = pk.load(fp)
     # convert to dict for faster querying
-    if service_name == 'gas_station':
-        key_name = 'stations_operational'
-    else:
-        key_name = 'stores_operational'
-    dict = {d['datetime']:tuple([str(x) for x in d[key_name]]) for d in outages}
+    dict = {d['datetime']:d['operational_ids'] for d in outages}
     return(dict)
 
 

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pickle as pk
 
 # import data
-fname = 'gas_station_outages'
+fname = 'gas_station_operating'
 df = pd.read_csv('data/destinations/{}.csv'.format(fname))
 
 # convert appropriate columns to time
@@ -79,7 +79,7 @@ for i in range(time_steps):
         if has_power and has_gas:
             stations_operational.append(station_id)
     # add the dictionary
-    stations_dict = {'datetime':time_record, 'stations_operational':stations_operational}
+    stations_dict = {'datetime':time_record, 'operational_ids':stations_operational}
     # append to the list
     stations_over_time.append(stations_dict)
     # iterate time
@@ -89,25 +89,3 @@ for i in range(time_steps):
 # save list of operational stations over time
 with open('data/destinations/{}.pk'.format(fname),'wb') as fp:
     pk.dump(stations_over_time, fp)
-
-# plot number of stations out over time
-x = []
-y = []
-for i in stations_over_time:
-    x.append(i['datetime'])
-    y.append(len(i['stations_operational']))
-
-
-plt.plot(x,y)
-plt.figsize = [8.26/2.54, 6.43/2.54]
-plt.axvline(datetime(2018,9,14,7,0),ls='--',color='k')
-plt.text(datetime(2018,9,14,15,0), 100,'landfall')
-plt.xticks(rotation=45)
-plt.tight_layout(pad=2)
-# start scraping
-# plt.axvline(datetime(2018,9,19,9,0),ls='--',color='k')
-# plt.text(datetime(2018,9,19,15,0), 100,'scraping')
-
-plt.ylabel('Operational gas stations')
-plt.savefig('fig/{}.png'.format(fname), dpi=500, format='png')
-plt.show()

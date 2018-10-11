@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pickle as pk
 
 # import data
-fname = 'super_market_outages'
+fname = 'super_market_operating'
 df = pd.read_csv('data/destinations/{}.csv'.format(fname), encoding = "ISO-8859-1")
 df = df.dropna(how='all')
 
@@ -47,7 +47,7 @@ for i in range(time_steps):
         #     import code
         #     code.interact(local=locals())
     # add the dictionary
-    stores_dict = {'datetime':time_record, 'stores_operational':stores_operational}
+    stores_dict = {'datetime':time_record, 'operational_ids':stores_operational}
     # append to the list
     stores_over_time.append(stores_dict)
     # iterate time
@@ -56,25 +56,3 @@ for i in range(time_steps):
 # save list of operational stations over time
 with open('data/destinations/{}.pk'.format(fname),'wb') as fp:
     pk.dump(stores_over_time, fp)
-
-
-
-# plot number of stores out over time
-x = []
-y = []
-for i in stores_over_time:
-    x.append(i['datetime'])
-    y.append(len(i['stores_operational']))
-
-
-
-plt.plot(x,y)
-plt.figsize = [8.26/2.54, 6.43/2.54]
-plt.axvline(datetime(2018,9,14,7,0),ls='--',color='k')
-plt.text(datetime(2018,9,14,15,0), 25,'landfall')
-plt.xticks(rotation=45)
-plt.tight_layout(pad=2)
-
-plt.ylabel('Open super markets')
-plt.savefig('fig/{}.png'.format(fname), dpi=500, format='png')
-plt.show()
