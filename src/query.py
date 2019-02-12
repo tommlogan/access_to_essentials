@@ -15,15 +15,15 @@ import itertools
 import numpy as np
 import requests
 
-engine = create_engine('postgresql+psycopg2://postgres:@localhost/nc?port=5444')
+engine = create_engine('postgresql+psycopg2://postgres:resil.florida@localhost/fl?port=5444')
 
-osrm_url = 'http://localhost:5555'
+osrm_url = 'http://localhost:5556'
 
 def main():
     '''
     set up the db tables I need for the querying
     '''
-    con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
+    con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
 
     # init the destination tables
     # create_dest_table(con)
@@ -42,11 +42,11 @@ def create_dest_table(con):
     '''
     create a table with the supermarkets and groceries
     '''
-    types = ['gas_station','super_market']
+    types = ['gas_station','super_market_operating']
     # import the csv's
     df = pd.DataFrame()
     for dest_type in types:
-        df_type = pd.read_csv('data/destinations/' + dest_type + '.csv', encoding = "ISO-8859-1", usecols = ['id','name','lat','lon'])
+        df_type = pd.read_csv('data/destinations/' + dest_type + '_FL.csv', encoding = "ISO-8859-1", usecols = ['id','name','lat','lon'])
         df_type['dest_type'] = dest_type
         df = df.append(df_type)
 
@@ -60,7 +60,7 @@ def create_dest_table(con):
         #drop the geometry column as it is now duplicative
     gdf.drop('geometry', 1, inplace=True)
     # set index
-    gdf.set_index(['id','dest_type'])
+    gdf.set_index(['id','dest_type'], inplace=True)
 
     # export to sql
     gdf.to_sql('destinations', engine, dtype={'geom': Geometry('POINT', srid= 4326)})
@@ -82,7 +82,7 @@ def query_points(con):
     # connect to db
     cursor = con.cursor()
     # get list of all origin ids
-    sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.juris = 'WM'"
+    sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.name = 'Panama City'"
     orig_df = gpd.GeoDataFrame.from_postgis(sql, con, geom_col='geom')
     orig_df['x'] = orig_df.geom.centroid.x
     orig_df['y'] = orig_df.geom.centroid.y
