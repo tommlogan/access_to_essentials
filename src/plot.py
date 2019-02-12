@@ -15,15 +15,16 @@ cursor = con.cursor()
 plt.style.use(['tableau-colorblind10'])#,'dark_background'])
 fig_transparency = False
 # figure size (cm)
-fig_width = 24#33.5#8.26
+fig_width = 22*2/3#33.5#8.26
 golden_mean = (sqrt(5)-1.0)/2.0    # Aesthetic ratio
-fig_height = 14#16#6.43 #fig_width/golden_mean
+fig_height = 16*2/3#16#6.43 #fig_width/golden_mean
 # font size
 font_size = 20
+dpi = 500
 # additional parameters
 params = {'axes.labelsize': font_size, # fontsize for x and y labels (was 10)
           'font.size': font_size, # was 10
-          'legend.fontsize': font_size, # was 10
+          'legend.fontsize': font_size * 2/3, # was 10
           'xtick.labelsize': font_size,
           'font.sans-serif' : 'Arial',
           # 'ytick.labelsize': 0,
@@ -37,26 +38,40 @@ def main():
     '''
     plots
     '''
-    services = ['gas_station', 'super_market']
+
+    services = ['super_market']#['gas_station']#, 'super_market']
     # import the service operational ids over time
     operating = {}
     for service in services:
         operating[service] = import_operating(service)
     # Plot service restoration
-    # for service in services:
-    #     # service_restoration(service)
-    #     resilience_curve(service, operating)
-    # Plot choropleth
-    time_stamp = list(operating[service].keys())[350]
-    service = 'gas_station'
-    choropleth_city(time_stamp, service, operating)
-
+    # for i in np.linspace(0,len(list(operating[service].keys()))-1,10):
+    time_stamp = list(operating[service].keys())[200]
+    for service in services:
+        # service_restoration(service)
+        resilience_curve(service, operating, time_stamp)
+        # Plot choropleth
+        plot_ecdf(time_stamp, service, operating)
+        choropleth_city(time_stamp, service, operating)
 
 
 def choropleth_city(time_stamp, service, operating):
     '''
     Plot city blocks and destinations
     '''
+    # font_size = 10
+    # # additional parameters
+    # params = {'axes.labelsize': font_size, # fontsize for x and y labels (was 10)
+    #           'font.size': font_size, # was 10
+    #           'legend.fontsize': font_size * 2/3, # was 10
+    #           'xtick.labelsize': font_size,
+    #           'font.sans-serif' : 'Arial',
+    #           # 'ytick.labelsize': 0,
+    #           'lines.linewidth' : 2,
+    #           'figure.autolayout' : True,
+    #           'figure.figsize': [fig_width/2.54,fig_height/2.54]
+    # }
+    # mpl.rcParams.update(params)
     # import the data for the census blocks
     sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.juris = 'WM'"
     df = gpd.GeoDataFrame.from_postgis(sql, con, geom_col='geom')
@@ -73,30 +88,44 @@ def choropleth_city(time_stamp, service, operating):
     dist = pd.read_sql(sql, con, params = (time_stamp, service,))
     # merge distance into blocks
     df = df.merge(dist, left_on = 'geoid10', right_on = 'id_orig')
+    # create the distance bins
+    bins = [0,1000,2000,3000,4000,np.inf]
+    def bin_mapping(x):
+        for idx, bound in enumerate(bins):
+            if x < bound:
+                return bound
+    bin_labels = [idx / (len(bins) - 1.0) for idx in range(len(bins))]
+    df['Bin_Lbl'] = df['distance'].apply(bin_mapping)
     # plot
     fig, ax = plt.subplots()
     ax.set_aspect('equal')
     # plot blocks
-    ch = df.plot(ax=ax, column='distance', cmap='OrRd', scheme='quantiles', legend=True)#, color='white', edgecolor='black')
+    ch = df.plot(ax=ax, column='Bin_Lbl', cmap='OrRd', alpha=1,vmin=0,vmax=5000)#, legend=True)#, color='white', edgecolor='black')
+    # plt.colorbar(ch,{'orientation':'horizontal'})
     ax.autoscale(False)
     # plot destinations
-    on = dests[dests['Operational']==True].plot(ax=ax, marker='v', color='cornflowerblue', markersize=20, label = 'open');
-    off = dests[dests['Operational']==False].plot(ax=ax, marker='v', color='black', markersize=20, label = 'closed');
+    on = dests[dests['Operational']==True].plot(ax=ax, marker='v', color='cornflowerblue', markersize=15, label = 'open');
+    off = dests[dests['Operational']==False].plot(ax=ax, marker='v', color='black', markersize=15, label = 'closed');
     # formatting
     ax.set_axis_off()
     if service == 'gas_station':
-        plt.title('Proximity (m) to open gas station at {}'.format(time_stamp.strftime("%Y-%m-%d %H:%M")))
+        # plt.title('Proximity (m) to open gas station at {}'.format(time_stamp.strftime("%Y-%m-%d %H:%M")))
+        # plt.title('Meters to gas station')
+        plt.title('{}'.format(time_stamp.strftime("%d-%b-%Y")))
     else:
-        plt.title('Proximity (m) to open super market at {}'.format(time_stamp.strftime("%Y-%m-%d %H:%M")))
+        # plt.title('Proximity (m) to open super market at {}'.format(time_stamp.strftime("%d-%b-%Y")))
+        plt.title('{}'.format(time_stamp.strftime("%d-%b-%Y")))
     # legend
     # import code
     # code.interact(local=locals())
 # lns = ch + on + off
     # labs = [l.get_label() for l in lns]
     # plt.legend(lns, labs, loc='center left')#, bbox_to_anchor=(1, 0.5))
-    ax.get_legend().set_bbox_to_anchor((.12, .4))
+    # ax.get_legend().set_bbox_to_anchor((.12, .4))
+
     # save fig
-    plt.savefig('fig/choropleth_{}_{}.pdf'.format(service,time_stamp.strftime("%Y%m%d-%H")), dpi=800, format='pdf', transparent=fig_transparency)
+    # plt.savefig('fig/choropleth_{}_{}.pdf'.format(service,time_stamp.strftime("%Y%m%d-%H")), dpi=dpi, format='pdf', transparent=fig_transparency)
+    plt.savefig('fig/gif/choropleth_{}_{}.png'.format(service,time_stamp.strftime("%Y%m%d-%H")), dpi=dpi, format='png', transparent=fig_transparency)
     plt.clf()
 
 
@@ -116,7 +145,7 @@ def service_restoration(service):
     plt.plot(x,y)
     # land fall line
     plt.axvline(datetime(2018,9,14,7,0),ls='--')
-    plt.text(datetime(2018,9,14,15,0), plt.ylim()[1]*0.9,'landfall')
+    plt.text(datetime(2018,9,14,15,0), 500,'landfall')
     # x ticks
     # import code
     # code.interact(local=locals())
@@ -129,7 +158,7 @@ def service_restoration(service):
     else:
         plt.ylabel('Open super market')
     # save fig
-    plt.savefig('fig/restoration_{}.png'.format(service), dpi=500, format='png', transparent=fig_transparency, bbox_inches='tight')
+    plt.savefig('fig/restoration_{}.png'.format(service), dpi=dpi, format='png', transparent=fig_transparency, bbox_inches='tight')
     plt.clf()
 
 
@@ -140,22 +169,25 @@ def plot_ecdf(time_stamp, service, operating):
     # calculate the ecdf data
     pop = calc_ecdf(time_stamp, service, operating)
     # plot the cdf
-    plt.plot(pop.distance, pop.perc, label = service)
+    plt.plot(pop.distance, pop.white_perc, label = 'white')
+    plt.plot(pop.distance, pop.nonwhite_perc, label = 'nonwhite')
     # ylabel
     plt.ylabel('Percentage of residents')
     # xlabel
     if service == 'gas_station':
-        plt.xlabel('Distance to open gas station (m)')
+        plt.xlabel('Distance to gas station (m)')
     else:
         plt.xlabel('Distance to open super market (m)')
-    plt.title(time_stamp, loc='left')
+    plt.xlim([0,8000])
+    plt.title('{}'.format(time_stamp.strftime("%d-%b-%Y")))
+    # plt.title(time_stamp, loc='left')
     plt.legend()
     # savefig
-    plt.savefig('fig/cdf_{}_{}.png'.format(service,time_stamp.strftime("%Y%m%d-%H")), dpi=500, format='png', transparent=fig_transparency)
+    plt.savefig('fig/gif/cdf_{}_{}.png'.format(service,time_stamp.strftime("%Y%m%d-%H")), dpi=dpi, format='png', transparent=fig_transparency)
     plt.clf()
 
 
-def resilience_curve(service, operating):
+def resilience_curve(service, operating, time_stamp_line):
     '''
     Plot the resilience curve
     '''
@@ -182,21 +214,28 @@ def resilience_curve(service, operating):
     # code.interact(local=locals())
     for i in range(len(percentiles)-1):
         plt.fill_between(df.time_stamp.values, np.array(df[df_names[i]], dtype = float), np.floor(np.array(df[df_names[i+1]], dtype = float)), alpha=0.7, color = col_list[i])
-    plt.plot(df.time_stamp, df['mean'], label = service)
+    plt.plot(df.time_stamp, df['mean'], label = service, color = 'k')
+    plt.plot(df.time_stamp, np.array(df[df_names[0]], dtype = float), linestyle = '--', color = 'k')
+    plt.plot(df.time_stamp, np.array(df[df_names[i+1]], dtype = float), linestyle = '--', color = 'k')
+    # plt.axvline(x=time_stamp_line, color = 'k')
+    # land fall
+    plt.axvline(datetime(2018,9,14,7,0),ls='--', color = 'k')
+    plt.text(datetime(2018,9,14,15,0), 500,'landfall')
     # x ticks
-    x_dummy = np.linspace(0,len(df.time_stamp)-1,8)
-    t_dummy = [df.time_stamp[int(i)].date() for i in x_dummy]
+    x_dummy = np.linspace(0,len(df.time_stamp)-1,4)
+    t_dummy = [df.time_stamp[int(i)].date().strftime("%d-%b-%Y") for i in x_dummy]
     plt.xticks(t_dummy, t_dummy, rotation=45)
     # ylabel
     plt.gca().invert_yaxis()
     if service == 'gas_station':
-        plt.ylabel('Distribution of distance \n to open gas station (m)')
+        # plt.ylabel('Distribution of distance \n to open gas station (m)')
+        plt.ylabel('Meters to gas station')
     else:
         plt.ylabel('Distribution of distance \n to open super market (m)')
     # legend
-    plt.legend(loc='lower right')
+    # plt.legend(loc='lower right')
     # savefig
-    plt.savefig('fig/resilience_{}.pdf'.format(service), dpi=800, format='pdf', bbox_inches='tight', transparent=fig_transparency)
+    plt.savefig('fig/gif/resilience_{}_{}.png'.format(service,time_stamp_line.strftime("%Y%m%d-%H")), dpi=dpi, format='png')#, bbox_inches='tight', transparent=fig_transparency)
     plt.clf()
 
 
@@ -208,16 +247,23 @@ def calc_ecdf(time_stamp, service, operating):
     sql = 'SELECT distance, id_orig FROM nearest_in_time WHERE time_stamp = %s AND service = %s'
     dist = pd.read_sql(sql, con, params = (time_stamp, service,))
     # import number of people
-    sql = 'SELECT "H7X001", geoid10 FROM demograph;'
+    sql = 'SELECT "H7X001", "H7X002", geoid10 FROM demograph;'
     pop = pd.read_sql(sql, con)
     # merge population into blocks
     pop = pop.merge(dist, left_on = 'geoid10', right_on = 'id_orig')
+    pop['white'] = pop.H7X002
+    pop['nonwhite'] = pop.H7X001 - pop.H7X002
     # total population
     pop_total = pop.H7X001.sum()
+    # pop_nonwhite
+    pop_nonwhite_total = pop.nonwhite.sum()
+    pop_white_total = pop.white.sum()
     # sort df by distance (ascending)
     pop = pop.sort_values('distance')
     # column for percent of residents
     pop['perc'] = pop.H7X001.cumsum()/pop_total*100
+    pop['nonwhite_perc'] = pop.nonwhite.cumsum()/pop_nonwhite_total*100
+    pop['white_perc'] = pop.white.cumsum()/pop_white_total*100
     # return df
     return(pop)
 
@@ -231,6 +277,7 @@ def import_operating(service_name):
     # convert to dict for faster querying
     dict = {d['datetime']:d['operational_ids'] for d in operating}
     return(dict)
+
 
 def weighted_quantile(values, quantiles, sample_weight=None, values_sorted=False, old_style=False):
     # https://stackoverflow.com/questions/21844024/weighted-percentile-using-numpy/29677616#29677616
