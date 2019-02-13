@@ -8,18 +8,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle as pk
 
+
+state = 'FL'
 # import data
-fname = 'gas_station_operating'
+fname = 'gas_station_operating_FL'
 df = pd.read_csv('data/destinations/{}.csv'.format(fname))
 
 # convert appropriate columns to time
 df.time = pd.to_datetime(df.time, dayfirst = True)
 df.loc[df.has_gas_updatedate == 'FALSE', 'has_gas_updatedate'] = None
 df.loc[df.has_gas_updatedate == 'TRUE', 'has_gas_updatedate'] = None
+df.loc[df.has_gas_updatedate == True, 'has_gas_updatedate'] = None
 df.has_gas_updatedate = pd.to_datetime(df.has_gas_updatedate)
 # which stations have false power update timestamps
 df.loc[df.has_power_updatedate == 'FALSE', 'has_power_updatedate'] = None
 df.loc[df.has_power_updatedate == 'TRUE', 'has_power_updatedate'] = None
+df.loc[df.has_power_updatedate == True, 'has_power_updatedate'] = None
 df.has_power_updatedate = pd.to_datetime(df.has_power_updatedate)
 
 # update the times to account for UTC = EST + 4
@@ -27,15 +31,21 @@ df.has_gas_updatedate = df.has_gas_updatedate - timedelta(hours=4)
 df.has_power_updatedate = df.has_power_updatedate - timedelta(hours=4)
 
 
-time_record = datetime(2018,9,8,0,0)
-time_end = datetime(2018,10,9,13,0)
-time_scraping_started = datetime(2018,9,19,10,0)
+if state == 'FL':
+    time_record = datetime(2018,10,9,0,0)
+    time_end = datetime(2019,1,1,0,0)
+    time_scraping_started = datetime(2018,10,9,12,0)
+    # consider the stations which I have data at the last timestamp for
+    ids_used = np.unique(df.id)#[df.time==datetime(2019,1,1,0,0)])
+else:
+    time_record = datetime(2018,9,8,0,0)
+    time_end = datetime(2018,10,9,13,0)
+    time_scraping_started = datetime(2018,9,19,10,0)
+    # consider the stations which I have data at the last timestamp for
+    ids_used = np.unique(df.id[df.time==datetime(2018,10,9,10,0)])
 
 time_difference = (time_end - time_record)
 time_steps = (time_difference.days + 1) * 24
-
-# consider the stations which I have data at the last timestamp for
-ids_used = np.unique(df.id[df.time==datetime(2018,10,9,10,0)])
 
 # init dictionary for station outages
 stations_over_time = []

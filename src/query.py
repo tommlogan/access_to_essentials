@@ -153,15 +153,23 @@ def import_csv(file_name, table_name,engine):
     '''
     import a csv into the postgres db
     '''
-    file_name = 'B:/research/resilience/data/nhgis/nhgis0030_ds172_2010_block.csv'
+    if state=='FL':
+        file_name = 'B:/research/resilience/data/nhgis/nhgis0032_ds172_2010_block.csv'
+        con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
+        county = '005'
+    else:
+        file_name = 'B:/research/resilience/data/nhgis/nhgis0030_ds172_2010_block.csv'
+        con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
+        county = '129'
+    #
     table_name = 'demograph'
     # add csv to nc.demograph
-    df = pd.read_csv(file_name, dtype = {'STATEA':str, 'COUNTYA':str,'TRACTA':str,'BLOCKA':str})
-    df = df[df.COUNTYA=='129']
+    df = pd.read_csv(file_name, dtype = {'STATEA':str, 'COUNTYA':str,'TRACTA':str,'BLOCKA':str, 'H7X001':int, 'H7X002':int, 'H7X003':int, 'H7X004':int})
+    df = df[df.COUNTYA==county]
     df['geoid10'] = df['STATEA'] + df['COUNTYA'] + df['TRACTA'] + df['BLOCKA']
     df.to_sql(table_name, engine)
     # add the table indices
-    con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
+
     cursor = con.cursor()
     queries = ['CREATE INDEX "geoid10" ON demograph ("geoid10");',
             'CREATE INDEX "id" ON demograph ("BLOCKA");']
@@ -169,6 +177,8 @@ def import_csv(file_name, table_name,engine):
         cursor.execute(q)
     # commit
     con.commit()
+
+
 
 if __name__ == "__main__":
     main()

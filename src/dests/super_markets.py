@@ -8,8 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle as pk
 
+state = 'FL'
+
 # import data
-fname = 'super_market_operating'
+fname = 'super_market_operating_FL'
 df = pd.read_csv('data/destinations/{}.csv'.format(fname), encoding = "ISO-8859-1")
 df = df.dropna(how='all')
 
@@ -17,8 +19,12 @@ df = df.dropna(how='all')
 df.close = pd.to_datetime(df.close,dayfirst=True)
 df.open = pd.to_datetime(df.open,dayfirst=True)
 
-time_record = datetime(2018,9,8,0,0)
-time_end = datetime(2018,10,9,13,0)
+if state == 'FL':
+    time_record = datetime(2018,10,9,0,0)
+    time_end = datetime(2019,1,1,0,0)
+else:
+    time_record = datetime(2018,9,8,0,0)
+    time_end = datetime(2018,10,9,13,0)
 
 time_difference = (time_end - time_record)
 time_steps = (time_difference.days + 1) * 24

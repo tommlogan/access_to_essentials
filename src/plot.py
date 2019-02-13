@@ -8,8 +8,13 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pickle as pk
 import itertools
-con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
+import code
+import os
+# con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
+con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
 cursor = con.cursor()
+
+state = 'fl'
 
 # define the plotting style
 plt.style.use(['tableau-colorblind10'])#,'dark_background'])
@@ -39,39 +44,27 @@ def main():
     plots
     '''
 
-    services = ['super_market']#['gas_station']#, 'super_market']
+    services = ['super_market','gas_station']#, 'super_market']
     # import the service operational ids over time
     operating = {}
     for service in services:
         operating[service] = import_operating(service)
     # Plot service restoration
-    # for i in np.linspace(0,len(list(operating[service].keys()))-1,10):
-    time_stamp = list(operating[service].keys())[200]
-    for service in services:
-        # service_restoration(service)
-        resilience_curve(service, operating, time_stamp)
-        # Plot choropleth
-        plot_ecdf(time_stamp, service, operating)
-        choropleth_city(time_stamp, service, operating)
+    for i in np.linspace(0,len(list(operating[service].keys()))-1,10):
+        time_stamp = list(operating[service].keys())[int(i)]
+        # code.interact(local=locals())
+        for service in services:
+            # service_restoration(service)
+            resilience_curve(service, operating, time_stamp)
+            # Plot choropleth
+            plot_ecdf(time_stamp, service, operating)
+            # choropleth_city(time_stamp, service, operating)
 
 
 def choropleth_city(time_stamp, service, operating):
     '''
     Plot city blocks and destinations
     '''
-    # font_size = 10
-    # # additional parameters
-    # params = {'axes.labelsize': font_size, # fontsize for x and y labels (was 10)
-    #           'font.size': font_size, # was 10
-    #           'legend.fontsize': font_size * 2/3, # was 10
-    #           'xtick.labelsize': font_size,
-    #           'font.sans-serif' : 'Arial',
-    #           # 'ytick.labelsize': 0,
-    #           'lines.linewidth' : 2,
-    #           'figure.autolayout' : True,
-    #           'figure.figsize': [fig_width/2.54,fig_height/2.54]
-    # }
-    # mpl.rcParams.update(params)
     # import the data for the census blocks
     sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.juris = 'WM'"
     df = gpd.GeoDataFrame.from_postgis(sql, con, geom_col='geom')
@@ -124,8 +117,11 @@ def choropleth_city(time_stamp, service, operating):
     # ax.get_legend().set_bbox_to_anchor((.12, .4))
 
     # save fig
+    fig_out = 'fig/gif_{}/choropleth_{}_{}.png'.format(state,service,time_stamp.strftime("%Y%m%d-%H"))
+    if os.path.isfile(fig_out):
+        os.remove(fig_out)
     # plt.savefig('fig/choropleth_{}_{}.pdf'.format(service,time_stamp.strftime("%Y%m%d-%H")), dpi=dpi, format='pdf', transparent=fig_transparency)
-    plt.savefig('fig/gif/choropleth_{}_{}.png'.format(service,time_stamp.strftime("%Y%m%d-%H")), dpi=dpi, format='png', transparent=fig_transparency)
+    plt.savefig(fig_out, dpi=dpi, format='png', transparent=fig_transparency)
     plt.clf()
 
 
@@ -183,18 +179,21 @@ def plot_ecdf(time_stamp, service, operating):
     # plt.title(time_stamp, loc='left')
     plt.legend()
     # savefig
-    plt.savefig('fig/gif/cdf_{}_{}.png'.format(service,time_stamp.strftime("%Y%m%d-%H")), dpi=dpi, format='png', transparent=fig_transparency)
+    fig_out = 'fig/gif_{}/cdf_{}_{}.png'.format(state,service,time_stamp.strftime("%Y%m%d-%H"))
+    if os.path.isfile(fig_out):
+        os.remove(fig_out)
+    plt.savefig(fig_out, dpi=dpi, format='png', transparent=fig_transparency)
     plt.clf()
 
 
-def resilience_curve(service, operating, time_stamp_line):
+def resilience_curve(service, operating, time_stamp):
     '''
     Plot the resilience curve
     '''
+    time_stamp_line = time_stamp
     # percentiles
     percentiles = np.linspace(0,1,11)[1:-1]
     col_list = ['#ffffcc','#ffeda0','#fed976','#feb24c','#fd8d3c','#fc4e2a','#e31a1c','#bd0026','#800026']
-
     # init df
     times = sorted(operating[service].keys())
     df = pd.DataFrame({'time_stamp':times})
@@ -206,6 +205,7 @@ def resilience_curve(service, operating, time_stamp_line):
     for index, row in df.iterrows():
         time_stamp = df.loc[index,'time_stamp']
         pop = calc_ecdf(time_stamp, service, operating)
+        # code.interact(local=locals())
         resil_values = weighted_quantile(pop.distance.values, percentiles, sample_weight=pop.H7X001.values, values_sorted=True)
         df.loc[index, 'mean'] = np.average(pop.distance.values, weights = pop.H7X001.values)
         df.loc[index,df_names] = resil_values
@@ -217,10 +217,14 @@ def resilience_curve(service, operating, time_stamp_line):
     plt.plot(df.time_stamp, df['mean'], label = service, color = 'k')
     plt.plot(df.time_stamp, np.array(df[df_names[0]], dtype = float), linestyle = '--', color = 'k')
     plt.plot(df.time_stamp, np.array(df[df_names[i+1]], dtype = float), linestyle = '--', color = 'k')
-    # plt.axvline(x=time_stamp_line, color = 'k')
+    plt.axvline(x=time_stamp_line, color = 'k')
     # land fall
-    plt.axvline(datetime(2018,9,14,7,0),ls='--', color = 'k')
-    plt.text(datetime(2018,9,14,15,0), 500,'landfall')
+    if state == 'fl':
+        plt.axvline(datetime(2018,10,10,12,0),ls='--', color = 'k')
+        plt.text(datetime(2018,10,10,20,0), 500,'landfall')
+    else:
+        plt.axvline(datetime(2018,9,14,7,0),ls='--', color = 'k')
+        plt.text(datetime(2018,9,14,15,0), 500,'landfall')
     # x ticks
     x_dummy = np.linspace(0,len(df.time_stamp)-1,4)
     t_dummy = [df.time_stamp[int(i)].date().strftime("%d-%b-%Y") for i in x_dummy]
@@ -235,7 +239,12 @@ def resilience_curve(service, operating, time_stamp_line):
     # legend
     # plt.legend(loc='lower right')
     # savefig
-    plt.savefig('fig/gif/resilience_{}_{}.png'.format(service,time_stamp_line.strftime("%Y%m%d-%H")), dpi=dpi, format='png')#, bbox_inches='tight', transparent=fig_transparency)
+    # plt.show()
+    fig_out = 'fig/gif_{}/resilience_{}_{}.png'.format(state,service,time_stamp_line.strftime("%Y%m%d-%H"))
+    if os.path.isfile(fig_out):
+        os.remove(fig_out)
+    plt.savefig(fig_out, dpi=dpi, format='png')#, bbox_inches='tight', transparent=fig_transparency)
+    # plt.show()
     plt.clf()
 
 
@@ -272,7 +281,11 @@ def import_operating(service_name):
     import the station and store outages and prepare the dict
     '''
     # import data
-    with open('data/destinations/{}_operating.pk'.format(service_name), 'rb') as fp:
+    if state=='fl':
+        in_name = 'data/destinations/{}_operating_FL.pk'
+    else:
+        in_name = 'data/destinations/{}_operating.pk'
+    with open(in_name.format(service_name), 'rb') as fp:
         operating = pk.load(fp)
     # convert to dict for faster querying
     dict = {d['datetime']:d['operational_ids'] for d in operating}
@@ -296,12 +309,12 @@ def weighted_quantile(values, quantiles, sample_weight=None, values_sorted=False
         sample_weight = np.ones(len(values))
     sample_weight = np.array(sample_weight)
     assert np.all(quantiles >= 0) and np.all(quantiles <= 1), 'quantiles should be in [0, 1]'
-
+    #
     if not values_sorted:
         sorter = np.argsort(values)
         values = values[sorter]
         sample_weight = sample_weight[sorter]
-
+    #
     weighted_quantiles = np.cumsum(sample_weight) - 0.5 * sample_weight
     if old_style:
         # To be convenient with np.percentile

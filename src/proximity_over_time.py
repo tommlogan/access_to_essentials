@@ -12,8 +12,10 @@ import itertools
 import time
 
 # SQL connection
-engine = create_engine('postgresql+psycopg2://postgres:@localhost/nc?port=5444')
-con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
+# engine = create_engine('postgresql+psycopg2://postgres:@localhost/nc?port=5444')
+# con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
+engine = create_engine('postgresql+psycopg2://postgres:resil.florida@localhost/fl?port=5444')
+con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
 cursor = con.cursor()
 
 def populate_database():
@@ -84,7 +86,7 @@ def import_outages(service_name):
     import the station and store outages and prepare the dict
     '''
     # import data
-    with open('data/destinations/{}_operating.pk'.format(service_name), 'rb') as fp:
+    with open('data/destinations/{}_operating_FL.pk'.format(service_name), 'rb') as fp:
         outages = pk.load(fp)
     # convert to dict for faster querying
     dict = {d['datetime']:d['operational_ids'] for d in outages}
