@@ -10,11 +10,16 @@ import pickle as pk
 import itertools
 import code
 import os
-# con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
-con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
+
+state = 'nc'
+
+# connect to database
+if state == 'nc':
+    con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
+else:
+    con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
 cursor = con.cursor()
 
-state = 'fl'
 
 # define the plotting style
 plt.style.use(['tableau-colorblind10'])#,'dark_background'])
@@ -24,18 +29,21 @@ fig_width = 22*2/3#33.5#8.26
 golden_mean = (sqrt(5)-1.0)/2.0    # Aesthetic ratio
 fig_height = 16*2/3#16#6.43 #fig_width/golden_mean
 # font size
-font_size = 20
+font_size = 8
 dpi = 500
 # additional parameters
 params = {'axes.labelsize': font_size, # fontsize for x and y labels (was 10)
           'font.size': font_size, # was 10
           'legend.fontsize': font_size * 2/3, # was 10
           'xtick.labelsize': font_size,
-          'font.sans-serif' : 'Arial',
+          'font.sans-serif' : 'Corbel',
           # 'ytick.labelsize': 0,
-          'lines.linewidth' : 2,
+          'lines.linewidth' : 1,
           'figure.autolayout' : True,
-          'figure.figsize': [fig_width/2.54,fig_height/2.54]
+          'figure.figsize': [3,1.5],#[fig_width/2.54,fig_height/2.54]
+          'axes.spines.top'    : False,
+          'axes.spines.right'  : False,
+          'axes.xmargin' : 0
 }
 mpl.rcParams.update(params)
 
@@ -44,21 +52,32 @@ def main():
     plots
     '''
 
-    services = ['super_market','gas_station']#, 'super_market']
+    services = ['gas_station']#, 'super_market']
     # import the service operational ids over time
     operating = {}
     for service in services:
         operating[service] = import_operating(service)
+        # service_restoration(service)
     # Plot service restoration
-    for i in np.linspace(0,len(list(operating[service].keys()))-1,10):
-        time_stamp = list(operating[service].keys())[int(i)]
-        # code.interact(local=locals())
+    # for michael i want to end at Nov 25
+    date_list = list(operating[service].keys())
+    # code.interact(local=locals())
+    if state == 'fl':
+        date_loop = np.linspace(0,1128,10)
+        # delete the future dates
         for service in services:
-            # service_restoration(service)
-            resilience_curve(service, operating, time_stamp)
-            # Plot choropleth
-            plot_ecdf(time_stamp, service, operating)
-            # choropleth_city(time_stamp, service, operating)
+            operating[service] = {t:operating[service][t] for t in date_list[0:1130]}
+    else:
+        date_loop = np.linspace(0,len(date_list)-1,10)
+    # for i in date_loop:
+    i = date_loop[2]
+    time_stamp = date_list[int(i)]
+    # code.interact(local=locals())
+    for service in services:
+        resilience_curve(service, operating, time_stamp)
+        # Plot choropleth
+        plot_ecdf(time_stamp, service, operating)
+        # choropleth_city(time_stamp, service, operating)
 
 
 def choropleth_city(time_stamp, service, operating):
@@ -66,15 +85,22 @@ def choropleth_city(time_stamp, service, operating):
     Plot city blocks and destinations
     '''
     # import the data for the census blocks
-    sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.juris = 'WM'"
+    if state == 'fl':
+        sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.name = 'Panama City'"
+    else:
+        sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.juris = 'WM'"
     df = gpd.GeoDataFrame.from_postgis(sql, con, geom_col='geom')
     # import the locations of the services
     sql = "SELECT id, dest_type, geom FROM destinations WHERE dest_type = %s;"
-    dests = gpd.GeoDataFrame.from_postgis(sql, con, params = (service,))
+    if state == 'fl' and service == 'super_market':
+        dests = gpd.GeoDataFrame.from_postgis(sql, con, params = ('super_market_operating',))
+    else:
+        dests = gpd.GeoDataFrame.from_postgis(sql, con, params = (service,))
     dests.set_index('id', inplace=True)
     dests['Operational'] = False
     # which services are operating
     ids_open = operating[service][time_stamp]
+    # code.interact(local=locals())
     dests.loc[ids_open, 'Operational']  = True
     # import the distance to the nearest service for this time
     sql = 'SELECT distance, id_orig FROM nearest_in_time WHERE time_stamp = %s AND service = %s'
@@ -111,11 +137,14 @@ def choropleth_city(time_stamp, service, operating):
     # legend
     # import code
     # code.interact(local=locals())
-# lns = ch + on + off
+    # lns = ch + on + off
     # labs = [l.get_label() for l in lns]
     # plt.legend(lns, labs, loc='center left')#, bbox_to_anchor=(1, 0.5))
     # ax.get_legend().set_bbox_to_anchor((.12, .4))
-
+    # save shapefiles
+    df.to_file('fig/gif_{}/map_blocks_{}_{}.shp'.format(state,service,time_stamp.strftime("%Y%m%d-%H")))
+    dests.Operational = dests.Operational.astype(int)
+    dests.to_file('fig/gif_{}/map_dests_{}_{}.shp'.format(state,service,time_stamp.strftime("%Y%m%d-%H")))
     # save fig
     fig_out = 'fig/gif_{}/choropleth_{}_{}.png'.format(state,service,time_stamp.strftime("%Y%m%d-%H"))
     if os.path.isfile(fig_out):
@@ -129,7 +158,7 @@ def service_restoration(service):
     '''
     plot the number of services as they are restored
     '''
-    with open('data/destinations/{}_operating.pk'.format(service), 'rb') as fp:
+    with open('data/destinations/{}_operating_{}.pk'.format(service,state.upper()), 'rb') as fp:
         outages = pk.load(fp)
     # prepare data
     x = []
@@ -140,8 +169,8 @@ def service_restoration(service):
     # plot
     plt.plot(x,y)
     # land fall line
-    plt.axvline(datetime(2018,9,14,7,0),ls='--')
-    plt.text(datetime(2018,9,14,15,0), 500,'landfall')
+    # plt.axvline(datetime(2018,9,14,7,0),ls='--')
+    # plt.text(datetime(2018,9,14,15,0), 500,'landfall')
     # x ticks
     # import code
     # code.interact(local=locals())
@@ -154,7 +183,7 @@ def service_restoration(service):
     else:
         plt.ylabel('Open super market')
     # save fig
-    plt.savefig('fig/restoration_{}.png'.format(service), dpi=dpi, format='png', transparent=fig_transparency, bbox_inches='tight')
+    plt.savefig('fig/restoration_{}_{}.png'.format(service, state), dpi=dpi, format='png', transparent=fig_transparency, bbox_inches='tight')
     plt.clf()
 
 
@@ -165,24 +194,27 @@ def plot_ecdf(time_stamp, service, operating):
     # calculate the ecdf data
     pop = calc_ecdf(time_stamp, service, operating)
     # plot the cdf
-    plt.plot(pop.distance, pop.white_perc, label = 'white')
-    plt.plot(pop.distance, pop.nonwhite_perc, label = 'nonwhite')
+    # code.interact(local=locals())
+    plt.plot(pop.distance/1000, pop.perc, label = 'white')
+    # plt.plot(pop.distance, pop.white_perc, label = 'white')
+    # plt.plot(pop.distance, pop.nonwhite_perc, label = 'nonwhite')
     # ylabel
-    plt.ylabel('Percentage of residents')
+    plt.ylabel('% residents')
     # xlabel
     if service == 'gas_station':
-        plt.xlabel('Distance to gas station (m)')
+        plt.xlabel('Distance to open facility (km)')
     else:
-        plt.xlabel('Distance to open super market (m)')
-    plt.xlim([0,8000])
-    plt.title('{}'.format(time_stamp.strftime("%d-%b-%Y")))
+        plt.xlabel('Distance to facility (km)')
+    plt.xlim([0,5])
+    plt.ylim([0,None])
+    # plt.title('{}'.format(time_stamp.strftime("%d-%b-%Y")))
     # plt.title(time_stamp, loc='left')
-    plt.legend()
+    # plt.legend()
     # savefig
-    fig_out = 'fig/gif_{}/cdf_{}_{}.png'.format(state,service,time_stamp.strftime("%Y%m%d-%H"))
+    fig_out = 'fig/gif_{}/cdf_{}_{}.pdf'.format(state,service,time_stamp.strftime("%Y%m%d-%H"))
     if os.path.isfile(fig_out):
         os.remove(fig_out)
-    plt.savefig(fig_out, dpi=dpi, format='png', transparent=fig_transparency)
+    plt.savefig(fig_out, dpi=dpi, format='pdf', transparent=fig_transparency)#, bbox_inches='tight')
     plt.clf()
 
 
@@ -213,37 +245,40 @@ def resilience_curve(service, operating, time_stamp):
     # import code
     # code.interact(local=locals())
     for i in range(len(percentiles)-1):
-        plt.fill_between(df.time_stamp.values, np.array(df[df_names[i]], dtype = float), np.floor(np.array(df[df_names[i+1]], dtype = float)), alpha=0.7, color = col_list[i])
-    plt.plot(df.time_stamp, df['mean'], label = service, color = 'k')
-    plt.plot(df.time_stamp, np.array(df[df_names[0]], dtype = float), linestyle = '--', color = 'k')
-    plt.plot(df.time_stamp, np.array(df[df_names[i+1]], dtype = float), linestyle = '--', color = 'k')
+        plt.fill_between(df.time_stamp.values, np.array(df[df_names[i]], dtype = float)/1000, np.floor(np.array(df[df_names[i+1]], dtype = float))/1000, alpha=0.7, color = col_list[i])
+    plt.plot(df.time_stamp, df['mean']/1000, label = service, color = 'k')
+    plt.plot(df.time_stamp, np.array(df[df_names[0]], dtype = float)/1000, linestyle = '--', color = 'k')
+    plt.plot(df.time_stamp, np.array(df[df_names[i+1]], dtype = float)/1000, linestyle = '--', color = 'k')
     plt.axvline(x=time_stamp_line, color = 'k')
     # land fall
     if state == 'fl':
         plt.axvline(datetime(2018,10,10,12,0),ls='--', color = 'k')
         plt.text(datetime(2018,10,10,20,0), 500,'landfall')
     else:
-        plt.axvline(datetime(2018,9,14,7,0),ls='--', color = 'k')
-        plt.text(datetime(2018,9,14,15,0), 500,'landfall')
+        plt.axvline(datetime(2018,9,14,7,0),ls='--', color = 'k', linewidth=0.5)
+        plt.text(datetime(2018,9,11,0,0), 3.5,'Hurricane Florence \n landfall', fontsize=5)
     # x ticks
     x_dummy = np.linspace(0,len(df.time_stamp)-1,4)
+    # code.interact(local=locals())
     t_dummy = [df.time_stamp[int(i)].date().strftime("%d-%b-%Y") for i in x_dummy]
-    plt.xticks(t_dummy, t_dummy, rotation=45)
+    t_dummy2 = [df.time_stamp[int(i)].date().strftime("%d-%b") for i in x_dummy]
+    plt.xticks(t_dummy, t_dummy2, rotation=0)
     # ylabel
+    plt.ylim([0,4])
     plt.gca().invert_yaxis()
     if service == 'gas_station':
         # plt.ylabel('Distribution of distance \n to open gas station (m)')
-        plt.ylabel('Meters to gas station')
+        plt.ylabel('Km to open facility')
     else:
         plt.ylabel('Distribution of distance \n to open super market (m)')
     # legend
     # plt.legend(loc='lower right')
     # savefig
     # plt.show()
-    fig_out = 'fig/gif_{}/resilience_{}_{}.png'.format(state,service,time_stamp_line.strftime("%Y%m%d-%H"))
+    fig_out = 'fig/gif_{}/resilience_{}_{}.pdf'.format(state,service,time_stamp_line.strftime("%Y%m%d-%H"))
     if os.path.isfile(fig_out):
         os.remove(fig_out)
-    plt.savefig(fig_out, dpi=dpi, format='png')#, bbox_inches='tight', transparent=fig_transparency)
+    plt.savefig(fig_out, dpi=dpi, format='pdf')#, bbox_inches='tight', transparent=fig_transparency)
     # plt.show()
     plt.clf()
 
