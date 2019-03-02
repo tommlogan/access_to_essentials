@@ -52,7 +52,7 @@ def main():
     plots
     '''
 
-    services = ['super_market']#['super_market']#,'gas_station']
+    services = ['gas_station']#['super_market']#,'gas_station']
     # import the service operational ids over time
     operating = {}
     for service in services:
