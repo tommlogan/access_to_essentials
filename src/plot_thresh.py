@@ -142,27 +142,29 @@ def resilience_curve(df, services, states):
         if os.path.isfile(fig_out):
             os.remove(fig_out)
         plt.savefig(fig_out, dpi=dpi, format='pdf')
+        plt.clf()
 
     # sufficient access
-    for thresh in [800, 1600]:
-        df_plot = df[df.distance == thresh]
-        for service in services:
-            # subset again
-            df_plot_s = df_plot[df_plot.service == service]
+    for service in services:
+        # subset again
+        df_plot = df[df.service == service]
+        for thresh in [800, 1600]:
+            df_plot_s = df_plot[df_plot.distance == thresh]
             for state in states:
                 # subset
                 df_plot_s_s = df_plot_s[df_plot_s.state == state]
                 # plot
-                plt.plot(df_plot_s_s.time_delta, df_plot_s_s['perc_population'], label = state)
-            plt.axvline(0,ls='--', color = 'k', linewidth=0.5)
-            plt.ylabel('% residents with \n sufficient access')
-            plt.xlabel('Days since landfall')
-            # plt.gca().invert_yaxis()
-            plt.legend(loc='lower right')
-            fig_out = 'fig/resilience_suffAccess_{}_thresh{}.pdf'.format(service,thresh)
-            if os.path.isfile(fig_out):
-                os.remove(fig_out)
-            plt.savefig(fig_out, dpi=dpi, format='pdf')
+                plt.plot(df_plot_s_s.time_delta, df_plot_s_s['perc_population'], label = '{}_{}'.format(state,thresh))
+        plt.axvline(0,ls='--', color = 'k', linewidth=0.5)
+        plt.ylabel('% residents with \n sufficient access')
+        plt.xlabel('Days since landfall')
+        # plt.gca().invert_yaxis()
+        plt.legend(loc='lower right')
+        fig_out = 'fig/resilience_suffAccess_{}_threshs.pdf'.format(service,thresh)
+        if os.path.isfile(fig_out):
+            os.remove(fig_out)
+        plt.savefig(fig_out, dpi=dpi, format='pdf')
+        plt.clf()
 
 
 def calc_ecdf(time_stamp, service, operating, con):
