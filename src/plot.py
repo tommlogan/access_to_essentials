@@ -11,7 +11,7 @@ import itertools
 import code
 import os
 
-state = 'nc'
+state = 'fl'
 
 # connect to database
 if state == 'nc':
@@ -52,7 +52,7 @@ def main():
     plots
     '''
 
-    services = ['gas_station']#, 'super_market']
+    services = ['gas_station']#['gas_station']#, 'super_market']
     # import the service operational ids over time
     operating = {}
     for service in services:
@@ -70,7 +70,7 @@ def main():
     else:
         date_loop = np.linspace(0,len(date_list)-1,10)
     # for i in date_loop:
-    i = date_loop[2]
+    i = date_loop[1]
     time_stamp = date_list[int(i)]
     # code.interact(local=locals())
     for service in services:
@@ -204,8 +204,8 @@ def plot_ecdf(time_stamp, service, operating):
     if service == 'gas_station':
         plt.xlabel('Distance to open facility (km)')
     else:
-        plt.xlabel('Distance to facility (km)')
-    plt.xlim([0,5])
+        plt.xlabel('Distance to open facility (km)')
+    plt.xlim([0,12])
     plt.ylim([0,None])
     # plt.title('{}'.format(time_stamp.strftime("%d-%b-%Y")))
     # plt.title(time_stamp, loc='left')
@@ -241,6 +241,12 @@ def resilience_curve(service, operating, time_stamp):
         resil_values = weighted_quantile(pop.distance.values, percentiles, sample_weight=pop.H7X001.values, values_sorted=True)
         df.loc[index, 'mean'] = np.average(pop.distance.values, weights = pop.H7X001.values)
         df.loc[index,df_names] = resil_values
+
+    if state == 'fl' and service == 'gas_station':
+        df['mean'] = df['mean'].rolling(10).median()
+        for i in range(len(percentiles)):
+            df[df_names[i]] = df[df_names[i]].rolling(10).median()
+
     # plot
     # import code
     # code.interact(local=locals())
@@ -253,10 +259,10 @@ def resilience_curve(service, operating, time_stamp):
     # land fall
     if state == 'fl':
         plt.axvline(datetime(2018,10,10,12,0),ls='--', color = 'k')
-        plt.text(datetime(2018,10,10,20,0), 500,'landfall')
+        # plt.text(datetime(2018,10,10,20,0), 500,'landfall')
     else:
         plt.axvline(datetime(2018,9,14,7,0),ls='--', color = 'k', linewidth=0.5)
-        plt.text(datetime(2018,9,11,0,0), 3.5,'Hurricane Florence \n landfall', fontsize=5)
+        # plt.text(datetime(2018,9,11,0,0), 3.5,'Hurricane Florence \n landfall', fontsize=5)
     # x ticks
     x_dummy = np.linspace(0,len(df.time_stamp)-1,4)
     # code.interact(local=locals())
@@ -264,13 +270,13 @@ def resilience_curve(service, operating, time_stamp):
     t_dummy2 = [df.time_stamp[int(i)].date().strftime("%d-%b") for i in x_dummy]
     plt.xticks(t_dummy, t_dummy2, rotation=0)
     # ylabel
-    plt.ylim([0,4])
+    # plt.ylim([0,4])
     plt.gca().invert_yaxis()
     if service == 'gas_station':
         # plt.ylabel('Distribution of distance \n to open gas station (m)')
         plt.ylabel('Km to open facility')
     else:
-        plt.ylabel('Distribution of distance \n to open super market (m)')
+        plt.ylabel('Km to open facility')
     # legend
     # plt.legend(loc='lower right')
     # savefig

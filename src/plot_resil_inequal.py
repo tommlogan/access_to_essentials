@@ -52,7 +52,7 @@ def main():
     plots
     '''
 
-    services = ['gas_station']#['super_market']#,'gas_station']
+    services = ['gas_station','super_market']#,'gas_station']
     # import the service operational ids over time
     operating = {}
     for service in services:
@@ -67,7 +67,10 @@ def main():
         date_loop = np.linspace(0,750,10)
         # delete the future dates
         for service in services:
-            operating[service] = {t:operating[service][t] for t in date_list[0:750]}#1130]}
+            if service == 'supermarket':
+                operating[service] = {t:operating[service][t] for t in date_list[0:750]}#1130]}
+            else:
+                operating[service] = {t:operating[service][t] for t in date_list[0:1130]}
     else:
         date_loop = np.linspace(0,len(date_list)-1,10)
     # for i in date_loop:
@@ -75,151 +78,41 @@ def main():
     time_stamp = date_list[int(i)]
     # code.interact(local=locals())
     for service in services:
-        resilience_curve(service, operating, time_stamp)
+        # determine the geoid10's access quintiles
+        access_quintiles = determine_quintile(date_list[0], service, operating)
+        # plot the resilience curve
+        resilience_curve(service, operating, time_stamp, access_quintiles)
         # Plot choropleth
         # plot_ecdf(time_stamp, service, operating)
         # choropleth_city(time_stamp, service, operating)
 
 
-def choropleth_city(time_stamp, service, operating):
+
+def determine_quintile(time_stamp, service, operating):
     '''
-    Plot city blocks and destinations
+    calculate the ecdf at a certain time
     '''
-    # import the data for the census blocks
-    if state == 'fl':
-        sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.name = 'Panama City'"
-    else:
-        sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.juris = 'WM'"
-    df = gpd.GeoDataFrame.from_postgis(sql, con, geom_col='geom')
-    # import the locations of the services
-    sql = "SELECT id, dest_type, geom FROM destinations WHERE dest_type = %s;"
-    if state == 'fl' and service == 'super_market':
-        dests = gpd.GeoDataFrame.from_postgis(sql, con, params = ('super_market_operating',))
-    else:
-        dests = gpd.GeoDataFrame.from_postgis(sql, con, params = (service,))
-    dests.set_index('id', inplace=True)
-    dests['Operational'] = False
-    # which services are operating
-    ids_open = operating[service][time_stamp]
-    # code.interact(local=locals())
-    dests.loc[ids_open, 'Operational']  = True
     # import the distance to the nearest service for this time
     sql = 'SELECT distance, id_orig FROM nearest_in_time WHERE time_stamp = %s AND service = %s'
     dist = pd.read_sql(sql, con, params = (time_stamp, service,))
-    # merge distance into blocks
-    df = df.merge(dist, left_on = 'geoid10', right_on = 'id_orig')
-    # create the distance bins
-    bins = [0,1000,2000,3000,4000,np.inf]
-    def bin_mapping(x):
-        for idx, bound in enumerate(bins):
-            if x < bound:
-                return bound
-    bin_labels = [idx / (len(bins) - 1.0) for idx in range(len(bins))]
-    df['Bin_Lbl'] = df['distance'].apply(bin_mapping)
-    # plot
-    fig, ax = plt.subplots()
-    ax.set_aspect('equal')
-    # plot blocks
-    ch = df.plot(ax=ax, column='Bin_Lbl', cmap='OrRd', alpha=1,vmin=0,vmax=5000)#, legend=True)#, color='white', edgecolor='black')
-    # plt.colorbar(ch,{'orientation':'horizontal'})
-    ax.autoscale(False)
-    # plot destinations
-    on = dests[dests['Operational']==True].plot(ax=ax, marker='v', color='cornflowerblue', markersize=15, label = 'open');
-    off = dests[dests['Operational']==False].plot(ax=ax, marker='v', color='black', markersize=15, label = 'closed');
-    # formatting
-    ax.set_axis_off()
-    if service == 'gas_station':
-        # plt.title('Proximity (m) to open gas station at {}'.format(time_stamp.strftime("%Y-%m-%d %H:%M")))
-        # plt.title('Meters to gas station')
-        plt.title('{}'.format(time_stamp.strftime("%d-%b-%Y")))
-    else:
-        # plt.title('Proximity (m) to open super market at {}'.format(time_stamp.strftime("%d-%b-%Y")))
-        plt.title('{}'.format(time_stamp.strftime("%d-%b-%Y")))
-    # legend
-    # import code
-    # code.interact(local=locals())
-    # lns = ch + on + off
-    # labs = [l.get_label() for l in lns]
-    # plt.legend(lns, labs, loc='center left')#, bbox_to_anchor=(1, 0.5))
-    # ax.get_legend().set_bbox_to_anchor((.12, .4))
-    # save shapefiles
-    df.to_file('fig/gif_{}/map_blocks_{}_{}.shp'.format(state,service,time_stamp.strftime("%Y%m%d-%H")))
-    dests.Operational = dests.Operational.astype(int)
-    dests.to_file('fig/gif_{}/map_dests_{}_{}.shp'.format(state,service,time_stamp.strftime("%Y%m%d-%H")))
-    # save fig
-    fig_out = 'fig/gif_{}/choropleth_{}_{}.png'.format(state,service,time_stamp.strftime("%Y%m%d-%H"))
-    if os.path.isfile(fig_out):
-        os.remove(fig_out)
-    # plt.savefig('fig/choropleth_{}_{}.pdf'.format(service,time_stamp.strftime("%Y%m%d-%H")), dpi=dpi, format='pdf', transparent=fig_transparency)
-    plt.savefig(fig_out, dpi=dpi, format='png', transparent=fig_transparency)
-    plt.clf()
+    # import number of people
+    sql = 'SELECT "H7X001", "H7X002", geoid10 FROM demograph;'
+    pop = pd.read_sql(sql, con)
+    # merge population into blocks
+    pop = pop.merge(dist, left_on = 'geoid10', right_on = 'id_orig')
+    pop['total'] = pop.H7X001
+    # determine the quintile labels based on distance (weighted so the bins are equal population)
+    pop['access_quintile'] = weighted_qcut(values = dist.distance, weights = pop.total, q = 5, labels=False, duplicates='drop')
+    # create populations based on access quintle
+    pop['access_rich'] = pop.total * (pop.access_quintile == 0)
+    pop['access_poor'] = pop.total * (pop.access_quintile == 4)
+    # drop a couple columns
+    access_quintiles = pop.drop(columns=['H7X001', 'H7X002', 'distance','id_orig','total'])
+    # return df
+    return(access_quintiles)
 
 
-def service_restoration(service):
-    '''
-    plot the number of services as they are restored
-    '''
-    with open('data/destinations/{}_operating_{}.pk'.format(service,state.upper()), 'rb') as fp:
-        outages = pk.load(fp)
-    # prepare data
-    x = []
-    y = []
-    for i in outages:
-        x.append(i['datetime'])
-        y.append(len(i['operational_ids']))
-    # plot
-    plt.plot(x,y)
-    # land fall line
-    # plt.axvline(datetime(2018,9,14,7,0),ls='--')
-    # plt.text(datetime(2018,9,14,15,0), 500,'landfall')
-    # x ticks
-    # import code
-    # code.interact(local=locals())
-    x_dummy = np.linspace(0,len(x)-1,8)
-    t_dummy = [x[int(i)].date() for i in x_dummy]
-    plt.xticks(t_dummy, t_dummy, rotation=45)
-    # labels
-    if service == 'gas_station':
-        plt.ylabel('Operational gas stations')
-    else:
-        plt.ylabel('Open super market')
-    # save fig
-    plt.savefig('fig/restoration_{}_{}.png'.format(service, state), dpi=dpi, format='png', transparent=fig_transparency, bbox_inches='tight')
-    plt.clf()
-
-
-def plot_ecdf(time_stamp, service, operating):
-    '''
-    plot the ecdf at a certain time
-    '''
-    # calculate the ecdf data
-    pop = calc_ecdf(time_stamp, service, operating)
-    # plot the cdf
-    # code.interact(local=locals())
-    plt.plot(pop.distance/1000, pop.perc, label = 'white')
-    # plt.plot(pop.distance, pop.white_perc, label = 'white')
-    # plt.plot(pop.distance, pop.nonwhite_perc, label = 'nonwhite')
-    # ylabel
-    plt.ylabel('% residents')
-    # xlabel
-    if service == 'gas_station':
-        plt.xlabel('Distance to open facility (km)')
-    else:
-        plt.xlabel('Distance to facility (km)')
-    plt.xlim([0,5])
-    plt.ylim([0,None])
-    # plt.title('{}'.format(time_stamp.strftime("%d-%b-%Y")))
-    # plt.title(time_stamp, loc='left')
-    # plt.legend()
-    # savefig
-    fig_out = 'fig/gif_{}/cdf_{}_{}.pdf'.format(state,service,time_stamp.strftime("%Y%m%d-%H"))
-    if os.path.isfile(fig_out):
-        os.remove(fig_out)
-    plt.savefig(fig_out, dpi=dpi, format='pdf', transparent=fig_transparency)#, bbox_inches='tight')
-    plt.clf()
-
-
-def resilience_curve(service, operating, time_stamp):
+def resilience_curve(service, operating, time_stamp, access_quintiles):
     '''
     Plot the resilience curve
     '''
@@ -238,6 +131,8 @@ def resilience_curve(service, operating, time_stamp):
     for index, row in df.iterrows():
         time_stamp = df.loc[index,'time_stamp']
         pop = calc_ecdf(time_stamp, service, operating)
+        # merge with the quinitles
+        pop = pop.merge(access_quintiles, on = 'geoid10')
         # code.interact(local=locals())
         resil_values = weighted_quantile(pop.distance.values, percentiles, sample_weight=pop.H7X001.values, values_sorted=True)
         # df.loc[index, 'mean'] = np.average(pop.distance.values, weights = pop.H7X001.values)
@@ -248,14 +143,25 @@ def resilience_curve(service, operating, time_stamp):
         df.loc[index, 'nonwhite_025th'] = weighted_quantile(pop.distance.values, 0.025, sample_weight=pop.nonwhite.values, values_sorted=True)
         df.loc[index, 'nonwhite_975th'] = weighted_quantile(pop.distance.values, 0.975, sample_weight=pop.nonwhite.values, values_sorted=True)
         df.loc[index,df_names] = resil_values
+        # access groups
+        df.loc[index, 'mean_best'] = np.average(pop.distance.values, weights = pop.access_rich.values)
+        df.loc[index, 'mean_worst'] = np.average(pop.distance.values, weights = pop.access_poor.values)
+    if state == 'fl' and service == 'gas_station':
+        df['mean_white'] = df['mean_white'].rolling(10).median()
+        df['mean_nonwhite'] = df['mean_nonwhite'].rolling(10).median()
+        df['mean_best'] = df['mean_best'].rolling(10).median()
+        df['mean_worst'] = df['mean_worst'].rolling(10).median()
     # plot
     # import code
     # code.interact(local=locals())
     # for i in range(len(percentiles)-1):
     # plt.fill_between(df.time_stamp.values, df['white_025th']/1000, df['white_975th']/1000, alpha=0.3)
     # plt.fill_between(df.time_stamp.values, df['nonwhite_025th']/1000, df['nonwhite_975th']/1000, alpha=0.3)
-    plt.plot(df.time_stamp, df['mean_white']/1000, label = 'white')
-    plt.plot(df.time_stamp, df['mean_nonwhite']/1000, label = 'non-white', linestyle = '--')
+    plt.plot(df.time_stamp, df['mean_white']/1000, label = 'white', color = 'k', alpha = 0.3)
+    plt.plot(df.time_stamp, df['mean_nonwhite']/1000, label = 'non-white', color = 'k', alpha = 1)
+    # distributional effects
+    plt.plot(df.time_stamp, df['mean_best']/1000, label = 'access-rich', linestyle = '--')
+    plt.plot(df.time_stamp, df['mean_worst']/1000, label = 'access-poor', linestyle = '--')
     # plt.plot(df.time_stamp, np.array(df[df_names[0]], dtype = float)/1000, linestyle = '--', color = 'k')
     # plt.plot(df.time_stamp, np.array(df[df_names[i+1]], dtype = float)/1000, linestyle = '--', color = 'k')
     # plt.axvline(x=time_stamp_line, color = 'k')
@@ -274,15 +180,17 @@ def resilience_curve(service, operating, time_stamp):
     plt.xticks(t_dummy, t_dummy2, rotation=0)
     # ylabel
     # plt.ylim([3,9])
-    plt.ylim([1,2.5])
-    plt.yticks([1,2])
-
-    plt.gca().invert_yaxis()
     if service == 'gas_station':
         # plt.ylabel('Distribution of distance \n to open gas station (m)')
-        plt.ylabel('Km to open service \n station: Wilmington, NC')
+        plt.ylabel('Km to open facility')#service \n station: Wilmington, NC')
+        if state == 'fl': plt.ylim([0,5])
+        else: plt.ylim([0,4])
+        # plt.yticks([1,2])
     else:
-        plt.ylabel('Km to open super \n market: Panama City, FL')
+        plt.ylabel('Km to open facility')#super \n market: Panama City, FL')
+        if state == 'fl': plt.ylim([0,12])
+        else: plt.ylim([0,7])
+    plt.gca().invert_yaxis()
     # legend
     plt.legend(loc='lower right')
     # savefig
@@ -338,6 +246,18 @@ def import_operating(service_name):
     # convert to dict for faster querying
     dict = {d['datetime']:d['operational_ids'] for d in operating}
     return(dict)
+
+
+def weighted_qcut(values, weights, q, **kwargs):
+    # thanks - https://stackoverflow.com/questions/45528029/python-how-to-create-weighted-quantiles-in-pandas
+    from pandas._libs.lib import is_integer
+    if is_integer(q):
+        quantiles = np.linspace(0, 1, q + 1)
+    else:
+        quantiles = q
+    order = weights[values.argsort()].cumsum()
+    bins = pd.cut(order / order.iloc[-1], quantiles, **kwargs)
+    return bins.sort_index()
 
 
 def weighted_quantile(values, quantiles, sample_weight=None, values_sorted=False, old_style=False):
