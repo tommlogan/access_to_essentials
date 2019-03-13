@@ -12,6 +12,7 @@ import code
 import os
 
 state = 'fl'
+save_to_sf = True
 
 # connect to database
 if state == 'nc':
@@ -52,7 +53,7 @@ def main():
     plots
     '''
 
-    services = ['gas_station']#['gas_station']#, 'super_market']
+    services = ['super_market','gas_station']#, 'super_market']
     # import the service operational ids over time
     operating = {}
     for service in services:
@@ -70,17 +71,18 @@ def main():
     else:
         date_loop = np.linspace(0,len(date_list)-1,10)
     # for i in date_loop:
+    # code.interact(local=locals())
     i = date_loop[1]
     time_stamp = date_list[int(i)]
-    # code.interact(local=locals())
+    #
     for service in services:
-        resilience_curve(service, operating, time_stamp)
+        # resilience_curve(service, operating, time_stamp)
         # Plot choropleth
-        plot_ecdf(time_stamp, service, operating)
-        # choropleth_city(time_stamp, service, operating)
+        # plot_ecdf(time_stamp, service, operating)
+        choropleth_city(time_stamp, service, operating, save_to_sf)
 
 
-def choropleth_city(time_stamp, service, operating):
+def choropleth_city(time_stamp, service, operating, save_to_sf = False):
     '''
     Plot city blocks and destinations
     '''
@@ -142,9 +144,16 @@ def choropleth_city(time_stamp, service, operating):
     # plt.legend(lns, labs, loc='center left')#, bbox_to_anchor=(1, 0.5))
     # ax.get_legend().set_bbox_to_anchor((.12, .4))
     # save shapefiles
-    df.to_file('fig/gif_{}/map_blocks_{}_{}.shp'.format(state,service,time_stamp.strftime("%Y%m%d-%H")))
-    dests.Operational = dests.Operational.astype(int)
-    dests.to_file('fig/gif_{}/map_dests_{}_{}.shp'.format(state,service,time_stamp.strftime("%Y%m%d-%H")))
+    if save_to_sf:
+        # add population information
+        sql = 'SELECT "H7X001", geoid10 FROM demograph;'
+        pop = pd.read_sql(sql, con)
+        # merge with the df
+        df = df.merge(pop, on = 'geoid10')
+        # save shapes
+        df.to_file('fig/gif_{}/map_blocks_{}_{}.shp'.format(state,service,time_stamp.strftime("%Y%m%d-%H")))
+        dests.Operational = dests.Operational.astype(int)
+        dests.to_file('fig/gif_{}/map_dests_{}_{}.shp'.format(state,service,time_stamp.strftime("%Y%m%d-%H")))
     # save fig
     fig_out = 'fig/gif_{}/choropleth_{}_{}.png'.format(state,service,time_stamp.strftime("%Y%m%d-%H"))
     if os.path.isfile(fig_out):
