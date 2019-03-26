@@ -25,11 +25,7 @@ cursor = con.cursor()
 # define the plotting style
 plt.style.use(['tableau-colorblind10'])#,'dark_background'])
 fig_transparency = False
-# figure size (cm)
-fig_width = 22*2/3#33.5#8.26
-golden_mean = (sqrt(5)-1.0)/2.0    # Aesthetic ratio
-fig_height = 16*2/3#16#6.43 #fig_width/golden_mean
-# font size
+
 font_size = 8
 dpi = 500
 # additional parameters
@@ -46,6 +42,16 @@ params = {'axes.labelsize': font_size, # fontsize for x and y labels (was 10)
           'axes.spines.right'  : False,
           'axes.xmargin' : 0
 }
+
+font_size = 5
+param_ecdf = {'axes.labelsize': font_size, # fontsize for x and y labels (was 10)
+          'font.size': font_size, # was 10
+          'legend.fontsize': font_size * 2/3, # was 10
+          'xtick.labelsize': font_size,
+          'figure.figsize': [4/2.54,2.3/2.54],#[fig_width/2.54,fig_height/2.54]
+          'lines.linewidth' : 0.5
+}
+
 mpl.rcParams.update(params)
 
 def main():
@@ -72,14 +78,15 @@ def main():
         date_loop = np.linspace(0,len(date_list)-1,10)
     # for i in date_loop:
     # code.interact(local=locals())
-    i = date_loop[1]
+    i = date_loop[1]#3]#1]
     time_stamp = date_list[int(i)]
     #
+    # plot_ecdf(time_stamp, 'both', operating)
     for service in services:
-        # resilience_curve(service, operating, time_stamp)
+        resilience_curve(service, operating, time_stamp)
         # Plot choropleth
         # plot_ecdf(time_stamp, service, operating)
-        choropleth_city(time_stamp, service, operating, save_to_sf)
+        # choropleth_city(time_stamp, service, operating, save_to_sf)
 
 
 def choropleth_city(time_stamp, service, operating, save_to_sf = False):
@@ -200,15 +207,15 @@ def plot_ecdf(time_stamp, service, operating):
     '''
     plot the ecdf at a certain time
     '''
-    # calculate the ecdf data
-    pop = calc_ecdf(time_stamp, service, operating)
-    # plot the cdf
-    # code.interact(local=locals())
-    plt.plot(pop.distance/1000, pop.perc, label = 'white')
-    # plt.plot(pop.distance, pop.white_perc, label = 'white')
-    # plt.plot(pop.distance, pop.nonwhite_perc, label = 'nonwhite')
+    mpl.rcParams.update(param_ecdf)
+    # plt.figure(figsize=(4/2.54,2.3/2.54))
+    for serv in ['super_market','gas_station']:
+        # calculate the ecdf data
+        pop = calc_ecdf(time_stamp, serv, operating)
+        # plot the cdf
+        plt.plot(pop.distance/1000, pop.perc, label = 'white')
     # ylabel
-    plt.ylabel('% residents')
+    # plt.ylabel('% residents')
     # xlabel
     if service == 'gas_station':
         plt.xlabel('Distance to open facility (km)')
@@ -219,6 +226,7 @@ def plot_ecdf(time_stamp, service, operating):
     # plt.title('{}'.format(time_stamp.strftime("%d-%b-%Y")))
     # plt.title(time_stamp, loc='left')
     # plt.legend()
+
     # savefig
     fig_out = 'fig/gif_{}/cdf_{}_{}.pdf'.format(state,service,time_stamp.strftime("%Y%m%d-%H"))
     if os.path.isfile(fig_out):
@@ -269,23 +277,31 @@ def resilience_curve(service, operating, time_stamp):
     if state == 'fl':
         plt.axvline(datetime(2018,10,10,12,0),ls='--', color = 'k')
         # plt.text(datetime(2018,10,10,20,0), 500,'landfall')
+        plt.xlim([None, datetime(2018,11,9,12,0)])
+        x_len = df.index[df.time_stamp == datetime(2018,11,9,0,0)].tolist()[0]
+        # x_len = len(df.time_stamp)-1
     else:
         plt.axvline(datetime(2018,9,14,7,0),ls='--', color = 'k', linewidth=0.5)
         # plt.text(datetime(2018,9,11,0,0), 3.5,'Hurricane Florence \n landfall', fontsize=5)
+        plt.xlim([None, datetime(2018,9,29,0,0)])
+        x_len = df.index[df.time_stamp == datetime(2018,9,29,0,0)].tolist()[0]
     # x ticks
-    x_dummy = np.linspace(0,len(df.time_stamp)-1,4)
+    x_dummy = np.linspace(0,x_len,4)
     # code.interact(local=locals())
     t_dummy = [df.time_stamp[int(i)].date().strftime("%d-%b-%Y") for i in x_dummy]
     t_dummy2 = [df.time_stamp[int(i)].date().strftime("%d-%b") for i in x_dummy]
     plt.xticks(t_dummy, t_dummy2, rotation=0)
     # ylabel
     # plt.ylim([0,4])
-    plt.gca().invert_yaxis()
+
     if service == 'gas_station':
         # plt.ylabel('Distribution of distance \n to open gas station (m)')
         plt.ylabel('Km to open facility')
     else:
         plt.ylabel('Km to open facility')
+        # plt.ylim([None,9])
+        # plt.yticks([2,5,8])
+    plt.gca().invert_yaxis()
     # legend
     # plt.legend(loc='lower right')
     # savefig

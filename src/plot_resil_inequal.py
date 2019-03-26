@@ -169,11 +169,17 @@ def resilience_curve(service, operating, time_stamp, access_quintiles):
     if state == 'fl':
         plt.axvline(datetime(2018,10,10,12,0),ls='--', color = 'k', linewidth=0.5)
         # plt.text(datetime(2018,10,10,20,0), 3.5,'landfall', fontsize=5)
+        plt.xlim([None, datetime(2018,11,9,12,0)])
+        x_len = df.index[df.time_stamp == datetime(2018,11,9,0,0)].tolist()[0]
     else:
         plt.axvline(datetime(2018,9,14,7,0),ls='--', color = 'k', linewidth=0.5)
+        # plt.xlim([None, datetime(2018,9,29,0,0)])
+        # x_len = df.index[df.time_stamp == datetime(2018,9,29,0,0)].tolist()[0]
+        plt.xlim([None, datetime(2018,10,9,0,0)])
+        x_len = df.index[df.time_stamp == datetime(2018,10,9,0,0)].tolist()[0]
      #   plt.text(datetime(2018,9,11,0,0), 3.5,'landfall', fontsize=5)
     # x ticks
-    x_dummy = np.linspace(0,len(df.time_stamp)-1,4)
+    x_dummy = np.linspace(0,x_len,4)
     # code.interact(local=locals())
     t_dummy = [df.time_stamp[int(i)].date().strftime("%d-%b-%Y") for i in x_dummy]
     t_dummy2 = [df.time_stamp[int(i)].date().strftime("%d-%b") for i in x_dummy]
@@ -193,6 +199,7 @@ def resilience_curve(service, operating, time_stamp, access_quintiles):
     plt.gca().invert_yaxis()
     # legend
     plt.legend(loc='lower right')
+    plt.xlabel('Going to delete this')
     # savefig
     # plt.show()
     fig_out = 'fig/resilience_equity_{}_{}.pdf'.format(state,service,time_stamp_line.strftime("%Y%m%d-%H"))
