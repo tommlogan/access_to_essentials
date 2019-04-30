@@ -74,11 +74,11 @@ and restart it with ``docker restart osrm-md``
   then exported the new layer as primary_schools (guess American's call them elementary)
 * libraries:  https://data.baltimorecity.gov/Culture-Arts/Library-Shape/drrv-65mc
 * supermarkets. Downloaded a kml from overpass turbo (shop=supermarket)
- * import the kml into arcgis pro
- * feature to point: on the polygons to get the centroid of the supermarkets
- * join the two layers with `merge` tool
- * select the stores within and near baltimore city limits
- * save the .shp - disable the Z layer
+  * import the kml into arcgis pro
+  * feature to point: on the polygons to get the centroid of the supermarkets
+  * join the two layers with `merge` tool
+  * select the stores within and near baltimore city limits
+  * save the .shp - disable the Z layer
 * hospital: https://data.baltimorecity.gov/dataset/Hospital/hrs6-bsyt
 
 ### Add the destinations to the database
