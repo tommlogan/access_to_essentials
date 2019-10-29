@@ -1,0 +1,499 @@
+\documentclass[onecolumn,doublespacing]{risa}
+
+\usepackage[figuresright]{rotating}
+\usepackage{afterpage}
+\usepackage{enumitem}
+\usepackage{moreverb,url}
+% \usepackage{natbib}
+% \usepackage{biblatex}
+% \bibliographystyle{apa}
+\usepackage[american]{babel}
+\usepackage{csquotes}
+\usepackage[
+    style=apa,
+    backend=biber,
+    sortcites=true,
+    sorting=nyt,
+%    isbn=false,
+%    url=false,
+%    doi=false,
+%    eprint=false,
+    hyperref=false,
+    backref=false,
+%    firstinits=false,
+]{biblatex}
+\let \citeNP \cite
+\let \citeA \textcite
+\let \cite \parencite
+
+% \input{enable-reprint}
+\DeclareLanguageMapping{american}{american-apa}
+
+\bibliography{references}
+
+% \bibliographystyle{apacite}
+% \setlength{\bibsep}{0.0pt}
+% \IfFileExists{pnas-new.bst}{
+%   \bibliographystyle{pnas-new}
+% }
+
+\begin{document}
+
+\jvol{}
+\jnum{}
+\pubyear{}
+
+\doi{}
+\copyright{}
+\issnyear{}
+
+\title[The Heart of Community Resilience]{The Heart of Community Resilience: A Framework and Approach for Measuring People's Access to Essential Services}
+
+% \author[Logan]{Tom M Logan,$^{1}$\affiliation{Industrial and Operations Engineering, University of Michigan, Ann Arbor, USA, tom.logan@canterbury.ac.nz (Note, TML is starting a new position at the University of Canterbury, NZ in September 2019)}
+%%
+% Seth D Guikema$^{1}$} 
+
+% \begin{abstract}
+% % Resilience urgently needs to be operationalized 
+% % We urgently need to understand how to build resilience if
+% We urgently need to understand how to put concepts of resilience into practice if we are to prepare our communities for climate change and exacerbated natural hazards.
+% Yet, despite the extensive discussion surrounding resilience, operationalizing the concept remains challenging. 
+% The dominant approaches for assessing resilience focus on either evaluating community characteristics or infrastructure functionality. 
+% While both remain useful, they have several limitations to their ability to provide actionable insight.
+% More importantly, the current conceptualizations do not consider essential services or how access is impaired by hazards. 
+% We argue that people need access to services such as food, education, healthcare, and cultural amenities to get back some semblance of normal life.
+% Providing equitable access to these types of services and quickly restoring that access following a disruption is the heart of community resilience. 
+% We propose a new conceptualization of resilience that is based on access to essential services, together with a way of measuring the resilience of a community based on this conceptualization. 
+% Using two illustrative examples from the impacts of Hurricanes Florence and Michael, we demonstrate how decision makers and planners can use this framework to visualize the effect of a hazard and quantify resilience-enhancing interventions. 
+% This equitable access to essentials approach is a resilience framework that integrates with spatial planning, and will enable communities not only to ``bounce back" from a disruption, but to ``bound forward'' and improve the resilience and quality of life for all residents.
+% \end{abstract}
+
+% \begin{keywords}
+% Community resilience $|$ Natural hazards $|$ Social justice $|$ Spatial planning $|$ Climate change
+% \end{keywords}
+
+\maketitle
+\newpage
+
+\section*{Abstract}
+We urgently need to understand how to put concepts of resilience into practice if we are to prepare our communities for climate change and exacerbated natural hazards.
+Yet, despite the extensive discussion surrounding resilience, operationalizing the concept remains challenging. 
+The dominant approaches for assessing resilience focus on either evaluating community characteristics or infrastructure functionality. 
+While both remain useful, they have several limitations to their ability to provide actionable insight.
+More importantly, the current conceptualizations do not consider essential services or how access is impaired by hazards. 
+We argue that people need access to services such as food, education, healthcare, and cultural amenities to get back some semblance of normal life.
+Providing equitable access to these types of services and quickly restoring that access following a disruption is the heart of community resilience. 
+We propose a new conceptualization of resilience that is based on access to essential services, together with a way of measuring the resilience of a community based on this conceptualization. 
+Using two illustrative examples from the impacts of Hurricanes Florence and Michael, we demonstrate how decision makers and planners can use this framework to visualize the effect of a hazard and quantify resilience-enhancing interventions. 
+This equitable access to essentials approach is a resilience framework that integrates with spatial planning, and will enable communities not only to ``bounce back" from a disruption, but to ``bound forward'' and improve the resilience and quality of life for all residents.
+
+Keywords:\\
+Community resilience $|$ Natural hazards $|$ Social justice $|$ Spatial planning $|$ Climate change
+\newpage
+
+\section{Introduction}
+Access to services is not something we should take for granted, not before nor after a disaster. Following Hurricane Katrina, residents of New Orleans' Lower 9\textsuperscript{th} Ward were forced to take three buses to reach their nearest grocer \cite{Netter2016-dm}. 
+The 2017 South Asian floods raised fears that thousands of children permanently dropped out of school \cite{Watt2017-bs}. 
+Even without these disasters, many people worldwide live within food deserts, health care deserts, and without access to other essential services. 
+Access to services, such as food, education, healthcare, and culture, is integral for communities to function well \cite{Winter1997-kc, Logan2017-fr, Dempsey2011-og, United_Nations_Educational_Scientific_and_Cultural_Organization2018-sf}.
+This means that equitable access to essential services is fundamental to community resilience.
+
+How to operationalize resilience is among today's most impactful research questions \cite{Caldarice2019-tv}.
+This is perhaps because resilience is conceptually malleable and multidimensional \cite{Caldarice2019-tv, Meerow2016-definingRes}. 
+To capture this complexity, it is widely accepted that no single metric will be sufficient \cite{Bruneau2003-px, Sharma2018-rs, Haimes2009-gj, Levine2014-je, Cutter2014-jm, Cutter2016-landscape}.
+We, as a research community, need to develop approaches that complement one another.
+
+% capacity metrics
+One existing approach for operationalizing resilience focuses on community capacity. 
+Motivating this approach is an understanding that resilience relies on qualities that enable a community to prepare for, respond to, recover from, and improve after hazards \cite{Cutter2014-jm, Zautra2008-rb}.
+Indicators are used to quantify these qualities.
+These indicators capture aspects including the social, economic, institutional, and infrastructure characteristics \cite{Cutter2014-jm, Cutter2010-vg, Cutter2016-landscape, Sherrieb2010-nk}, and the vulnerability and adaptability of communities \cite{Lam2016-qn}.
+This approach is not event-specific \cite{Koliou2018-jt}.
+Rather, the objective is to determine qualities of a community that can be strengthened to enhance the community's ability to respond and recover \cite{Cutter2014-jm, Cutter2010-vg, Sherrieb2010-nk}. 
+
+% infrastructure functionality
+Infrastructure functionality is the other approach.
+It focuses on critical infrastructure networks, such as electricity, transportation, communications, potable water, and sewers, with the goal of limiting damage, mitigating the consequences, and hastening the recovery \cite{Bruneau2003-px, Barker2013-od, Hosseini2016-pm, Haimes2009-gj, Guidotti2016-vu, Curt2018-kl}.
+Central to this approach is the resilience function or recovery curve, where the network's state (e.g., percent operational) is the focus.
+Much of the research in this area has improved how that recovery function is quantified \cite{Bruneau2003-px, Chang2004-et, Cimellaro2010-ov, Vugrin2010-vy, Ayyub2014-mf, Sharma2018-rs}.
+Other work has advanced how infrastructure networks can be optimized to reduce their vulnerability or speed their recovery \cite{Hosseini2016-pm, Xu2007-sc}.
+Ongoing advances address the interdependence of the infrastructure to understand how failures may cascade through a system \cite{Guidotti2016-vu, Gardoni2018-xu}.
+More recent extensions \cite{Gardoni2018-xu, Clark2018-pr, Guidotti2019-fc} have begun applying the capabilities-approach, which focuses on understanding how hazards affect the opportunities of individuals including being educated and being healthy \cite{Murphy2006-io}. 
+This existing work, however, remains focused on the effects from damage to centralized infrastructure.
+
+% limitations
+Although these traditional approaches are invaluable for understanding resilience, both have limitations in their ability to provide actionable insight for building resilience.
+The indicators of community characteristics remain heavily focused on socio-economic aspects of communities \cite{Koliou2018-jt} and approaches for improvement, such as increasing the community's education, operate on decadal time-scales.
+They are not spatially explicit and some lack validation \cite{Bakkensen2016-ht}.
+Primarily, they are not intended to provide information regarding how a community responds to a specific hazard or instruction for decision-makers in those cases.
+On the other hand, the infrastructure functionality approach is useful for hazard response.
+However, it assumes the services are provided by centralized infrastructure and often lack spatial specificity. 
+Additionally, the approach has ignored, until very recently, the actual people it aims to serve and has remained independent of their needs and vulnerabilities \cite{Cutter2008-placeBasedModel, Cutter2010-vg, Doorn2018-fx}.
+
+Most importantly, neither approach captures how a community can ensure people have access to essential services. 
+The accessibility of services such as education, healthcare, food, and cultural amenities (that critical infrastructure exists to support) is crucial for a community’s vitality, livability, and cohesion \cite{Dempsey2011-og, Talen2003-dc, Winter1997-kc, United_Nations_Educational_Scientific_and_Cultural_Organization2018-sf} (Figure \ref{fig:bal_services}).  
+These are what people need so they may recover and return to some semblance of normal life. 
+Without such services, people will leave a community.
+Currently the approaches to resilience cannot address questions specific to vital community function:
+Following a disaster how long must people go without acceptable access to food?
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\linewidth]{report/fig/fig_bal.png}
+    \caption{Equitable and acceptable access to services is essential for a communities viability and cohesion. These maps of Baltimore, MD, show the distance to the nearest (a) hospital, (b) supermarket, (c) public primary school, (d) library (an example of a cultural amenity). Figure (e) shows the percentage of residents who live within $x$ kilometers of their nearest service.
+    }
+    \label{fig:bal_services}
+\end{figure*}
+
+We need to rethink our approach to community resilience to address this unsolved challenge.
+This will require integrating our understanding of the social system and the physical infrastructure and truly focusing on the needs of and opportunities for the residents \cite{Koliou2018-jt, Cutter2016-landscape}.
+Although infrastructure is necessary for many opportunities, it is not sufficient on its own \cite{Doorn2018-fx}.
+Equally, possessing the characteristics of a strong and healthy community is vital, but alone is insufficient.
+
+We offer a fresh perspective on community resilience.
+We propose the equitable access to essentials (EAE) resilience framework that integrates and complements the existing approaches to provide actionable insight for communities trying to build their resilience.
+
+\section{Equitable access to essentials (EAE) resilience framework}
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\linewidth]{report/fig/NC_resilience.png}
+    \caption{Wilmington, NC on the 18\textsuperscript{th} of September, 2018. (a) The map of distance to nearest operational supermarket for census blocks with non-zero populations, (b) the cumulative distribution function showing the percentage of residents who are closer than $x$ to their nearest operational supermarket and service station, and (c, d) the resilience curves showing how the distribution in access changes over time.
+    }
+    \label{fig:fig1}
+\end{figure*}
+
+EAE measures the distance of residents within a community to their nearest operational essential services. 
+As facilities shutter and reopen due to a hazard, we can evaluate what percentage of people are affected, how long it takes to recover, and how the experiences differ across different groups of the population. 
+This spatially and temporally explicit approach both 1) identifies where and who requires attention from emergency responders, and 2) encourages interventions to reduce service deserts (e.g., food), both before and after a hazard, to reduce inequity and strengthen the community.
+
+We intentionally do not specify which services are essential to a community.
+This is community and culture specific and requires community engagement. 
+While, we focus on services requiring people to go to a centralized location, the technique could be also used to locate services such as ``Meals on Wheels" that send people out from a central location, if proximity is important.
+The approach's flexibility means that (re)construction focuses on places and services of significance to people \cite{United_Nations_Educational_Scientific_and_Cultural_Organization2018-sf}.
+
+We also intend EAE to be applicable for a wide range of hazards. 
+For example, before any hazardous event, EAE can be used to address inequality and to identify critical service locations. 
+Following a hazard that damages services or their supporting infrastructure, such as an earthquake or weather induced event (hurricane, flooding, heat wave), EAE can guide decision making on restoration.
+Following any hazard, regardless of the scale of destruction, EAE provides support to decision makers on where supplies need to be provided.
+In the event of a complete destruction, such as the result of a major wildfire or even sea level rise, EAE can guide new development to ensure it meets the needs of people.
+
+For a specified region, the equitable access to essentials resilience framework involves: 
+\begin{enumerate}[topsep=1pt,itemsep=0em,partopsep=1ex,parsep=1ex]
+    % \itemsep0em
+    \item Engaging the community 
+    \begin{enumerate}[topsep=0pt,itemsep=-2pt,partopsep=1ex,parsep=1ex]
+        % \itemsep0em
+        \item Establish which services are essential, and how needs differ throughout the community
+    \end{enumerate}
+    \item Measuring accessibility
+    \begin{enumerate}[topsep=0pt,itemsep=-2pt,partopsep=1ex,parsep=1ex]
+        % \itemsep0em
+        \item For each of the essential services, identify the locations of service provision facilities within the region
+        \item From each block within the region, determine the network distance to all facilities
+        \item For each block, determine the distance to the nearest operational facility
+        \item Map the distances to nearest service (Figure \ref{fig:fig1}a)
+        \item Plot the distribution of nearest distances (Figure \ref{fig:fig1}b)
+    \end{enumerate}
+    \item Monitoring the impacts from a hazard
+    \begin{enumerate}[topsep=0pt,itemsep=-2pt,partopsep=1ex,parsep=1ex]
+        % \itemsep0em
+        \item Update the distance to nearest operational services as facilities open and close
+        \item Construct the resilience curve showing how residents' access changes over time (Figures \ref{fig:fig1}c, \ref{figS:cdf_to_res})
+    \end{enumerate}
+    \item Evaluating equality and equity (Figure \ref{fig:equality})
+    \begin{enumerate}[topsep=0pt,itemsep=-2pt,partopsep=1ex,parsep=1ex]
+        % \itemsep0em
+        \item Differentiate residents based on demographics or vulnerability scores
+        \item Compare how the access for these various groups changes over time
+        \item Identify vulnerable areas to which to provide additional services and improve equity.
+    \end{enumerate}
+    \item Intervening to build resilience (Figure \ref{fig:haz_cycle})
+\end{enumerate}
+
+%%%%%%%%%% How does this integrate the existing methods?
+This is a new way of conceptualizing and quantifying community resilience that can support building resilience, independent of the hazard.
+EAE can be simulated using both the critical infrastructure and community capacity information.
+Critical infrastructure simulation provides ways of estimating which services will not be operational following a hazard.
+The community characteristics can be used to evaluate need and assess equity following these simulated disruptions.
+In turn, community indicators can be assessed and updated based on these simulations.
+Thus, EAE is a resilience framework that integrates the existing approaches with a clear focus on the well-being of the community's residents.
+
+\subsection{Acceptable access}
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{report/fig/sufficient_only.png}
+    \caption{The recovery curves, for Panama City following Michael and Wilmington following Florence, showing the percentage of residents in each city with acceptable access to both (a) supermarkets and (b) service stations. Acceptable access is defined by two distance thresholds. 
+    }
+    \label{fig:threshold}
+\end{figure}
+
+It is possible to specify a minimum acceptable standard for accessibility for each of the services and determine the portion of the community with acceptable access (Figure \ref{fig:threshold}). 
+The percentage of the residents with that acceptable access is determined from the cumulative distribution functions (the process is shown in Figure \ref{figS:cdf_to_res}). 
+The threshold must be place-based and service-specific and determined through community engagement \cite{Pantelic1991-qu, United_Nations_Educational_Scientific_and_Cultural_Organization2018-sf}.
+
+We recognize that while we argue for considering access to essential services as a measure of resilience, we  currently present proximity to services. 
+Access, in fact, is comprised of proximity, availability, acceptability, affordability, adequacy, and awareness \cite{Saurman2016-gj, Penchansky1981-qh}. 
+Drawing on, and advancing, the relevant literature will lead to the additional dimensions being included for each service. 
+These additional dimensions can be included through the use of a metric that defines acceptable access. 
+This would specify a minimum level suitable for human well-being \cite{Doorn2018-fx}.
+It may even require that proximity, cost, capacity, and other dimensions of accessibility vary based on the characteristics and vulnerabilities of the community to consider social justice (for example, proximity may vary based on car-ownership).
+This standard would be normatively indexed, i.e., the standard of acceptability is arbitrary and evolving (analogous to the poverty line, which is geographically specific) \cite{Constas2014-ui}.
+
+Nevertheless, proximity is a necessary component for access to services and provides insight into the resilience of a community. 
+A major benefit derived from using proximity, or any continuous measure of access, is the ability to assess the distribution of access across the population. 
+There is a very real risk when using thresholds that the residents with extremely poor access, who are often among the most vulnerable, are overlooked because they are aggregated by a binary metric \cite{Logan2017-fr}. 
+This is especially important given that poverty lies at the root of disaster vulnerability so true resilience approaches must help correct this \cite{Pantelic1991-qu}.
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\linewidth]{report/fig/dist_to_resil.png}
+    \caption{
+    How the distribution of access maps onto the resilience function (aka recovery curve). (a) these are the density functions (idealized histograms) of the distance of residents to their nearest service.
+    Each distribution curve represents a different phase of the hazard cycle. 
+    (b) these cumulative distribution functions are variants of (a) and show the percentage of the population that live less than the distance on the $x$ axis.
+    The threshold of acceptable access is shown here. Where this line intersects with the CDFs we can identify what percentage of the population has acceptable access.
+    (c) mapping these values onto their associated time results in this figure that shows acceptable access changing with time, and is a recovery curve.
+    }
+    \label{figS:cdf_to_res}
+\end{figure*}
+
+%%%%%%%%%% Equity and targeting vulnerability
+\subsection{Equality and equity}
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{report/fig/equality.png}
+    \caption{Comparing how access to essentials varies between demographic groups and initially access-rich/poor residents (the top and bottom 20\% of residents). This could also be done based on indicators of social vulnerability or community capacity.}
+    \label{fig:equality}
+\end{figure}
+Inequalities may be present before the occurrence of a hazard and are often exacerbated after an event \cite{Gardoni2018-xu}.
+EAE can parse different socio-economic characteristics and evaluate the accessibility of services across demographic groups (Figure \ref{fig:equality}) \cite{Williams_undated-sy}.
+This allows for needs-based assessments and the integration with indicators of social vulnerability and community capacity.
+Potential interventions can be assessed based on how they affect these different groups within the community.
+
+%%%%%%%%%%%% Transformation
+\subsection{Promoting transformation}
+The many resilience approaches that prioritize ``bouncing back", and quantify resilience using a ``change-in functionality", risk further institutionalizing inequity \cite{Normandin2019-hp, I_Sudmeier-Rieux2014-lc, MacKinnon2013-nx}.
+Claims such as ``residents have grown used to” these abysmal conditions, fail to value the importance of equity and community sustainability for resilience to future events \cite{Dempsey2011-og, Pantelic1991-qu}.
+They fail because they do not promote transformation and mitigation that encourages communities to ``bound forward."
+
+EAE is deliberately constructed to promote transformation of communities to enhance equity, both before and after a disruption. 
+This is achieved primarily in two ways.
+First, unlike the critical infrastructure approach, which predominately focuses on the state of infrastructure damage \cite{Cutter2010-vg}, EAE assesses the value residents derive from the system. 
+This distinction is important because restoring functionality is not analogous to returning to the previous state e.g., the services can be rebuilt in more desirable spatial configurations.
+Second, by assessing actual distance, rather than the difference at any point in time with the initial state (``change-in"), EAE identifies the service-poor residents. 
+For example, in Figure \ref{fig:equality}, the largest change in access is experienced by the service-rich residents.
+If decisions were made on the basis of this differential, then interventions would be targeted to improve the resilience of service-rich residents, and further exacerbate inequalities.
+Instead, decision makers should be aware of pre- and post-hazard service deserts. 
+This should mean that both mitigation and reconstruction target and improve the standard of living for all residents \cite{Pantelic1991-qu}. 
+This is essential for building sustainable communities, that are enabled to enhance their adaptive capacity and future resilience \cite{Saunders2015-uz}.
+
+\subsection{Spatially explicit}
+The access map is one of the most important decision support tools from EAE.
+This spatial focus contrasts with the existing approaches to resilience that are primarily spatially independent.
+Existing approaches do not explicitly require information about a community's layout nor do they support urban planners. 
+Examining the EAE maps allow decision makers to understand the distribution of damage, vulnerable people, and services and act accordingly.
+
+More generally, integrating land-use planning with resilience quantification is essential because spatial planning is among the most effective tools for reducing exposure and sensitivity to extreme events \cite{Brunetta2019-ki, Campbell2006-in, Hurlimann2012-uj} (see \citeA{Anderson2018-hr} for climate related examples). 
+Surprisingly, there has been little attempt to integrate climate protection and spatial planning in practice \cite{Barnes2017-xf}.
+EAE brings spatial planning to the forefront of resilience quantification by clearly linking it with urban changes and social sustainability.
+Incorporating EAE into planning can identify service-deserts and key facilities that many people depend on.
+This can guide urban planners to strengthen existing facilities or incentive the development of additional ones.
+Additionally it can be used to guide both green and brown field development to ensure that people's access to essential services is provided equitably.
+In this way, EAE links policy discussion regarding accessibility and equity with resilience and hazard planning.
+This supports rethinking how our cities are designed, planned, managed, and lived in, in the pursuit of community and urban resilience \cite{Caldarice2019-tv}. 
+
+\section{Illustrative examples}
+\begin{figure*}
+    \centering
+    \includegraphics[width=\linewidth]{report/fig/FL_resilience.png}
+    \caption{Access in Panama City, FL on the 14\textsuperscript{th} of October, 2018. (a) The map of distance to nearest operational service station, (b) the cumulative distribution function showing how many residents are closer than $x$ to their nearest operational service station and supermarket, and (c, d) the resilience curves showing how the distribution in access changes over time.
+    }
+    \label{fig:resil_FL}
+\end{figure*}
+\begin{figure*}
+    \centering
+    \includegraphics[width=\linewidth]{report/fig/fig_maps.png}
+    \caption{The map of distance to nearest operational service: (a) Access to service stations in Wilmington, NC on the 18\textsuperscript{th} of September, 2018. (b) Access to supermarkets in Panama City, FL on the 14\textsuperscript{th} of October, 2018.
+    }
+    \label{fig:resil_maps}
+\end{figure*}
+\subsection{Overview and scope}
+We now present two illustrative examples focused on Wilmington, North Carolina, and Panama City, Florida.
+In late 2018 they were struck by Hurricanes Florence and Michael respectively. 
+The examples demonstrate how the access to two services (grocery stores and service stations) change due to the hurricanes. 
+Specifically, we seek to 1) understand the spatial extent of service disruption so service-poor residents can be identified, 2) assess the resilience of the community to these hazards. 
+Note that our use of grocery stores and service stations is for demonstration purposes; in practice, determining which services are essential and what distance is acceptable requires community engagement. 
+
+Wilmington, NC is located on the southeastern North Carolina coast.
+It has a population of approximately 120,000 people. 
+Hurricane Florence made landfall slightly east of Wilmington in the early hours of September 14, 2018, as a Category 1 hurricane. 
+Due to the hurricane’s slow movement, it resulted in heavy rainfall beginning September 13, and coupled with strong storm surge, this resulted in heavy flooding. 
+
+By contrast, Panama City, FL, has approximately 37,000 residents and is located along the Emerald Coast of the Florida Panhandle. 
+Hurricane Michael made landfall 40km Southeast of Panama City as a Category 4 hurricane on October 10. 
+While Florence was notable for its rainfall, Michael caused catastrophic damage due to extreme winds (the strongest in the USA since 1992 with 208 km/h winds) and storm surge. 
+
+\subsection{Inputs}
+For this illustrative example we present the access to grocery stores and service stations before and following the hurricanes. 
+Service locations were determined using GasBuddy\footnote{https://tracker.gasbuddy.com} and supermarkets were identified manually using Google Maps.
+Access to these services was calculated at the US census block (neighborhood block) level and shapefiles and demographic data was sourced from IPUMS \cite{Manson2018-ug}. 
+The Open Street Map street network was downloaded from Geofabrik\footnote{http://download.geofabrik.de/}. 
+The distance from each block to all services was calculated using the Open Source Routing Machine using the approach described in \citeA{Logan2017-fr}. 
+Facility closure was recorded from GasBuddy, Twitter, and the supermarket websites.
+
+\subsection{Results}
+Figures \ref{fig:fig1}, \ref{fig:resil_FL}, S2 \& S3 show access in Wilmington and Panama City following the hurricanes. 
+The maps can be used to identify service-deserts and the recovery functions show how quickly the cities restore access and how acceptable that access is.
+
+As an example, there appears to be a food-desert in western Wilmington \ref{fig:fig1}a, so these residents may require emergency food supplies even after the other stores reopen.
+Note that due to data availability, the supermarket results do not include all food outlets as we only obtained information for stores that were reporting their opening times.
+Although these results do not comprehensively present food-deserts, they provide a demonstration of using this approach.
+These maps could be varied to highlight sectors of the community with high social vulnerability, or, for example, a higher proportion of aged residents, so that emergency response can target need.
+
+Recovery times and access quality are shown in Figures \ref{fig:fig1}c,d, \ref{fig:resil_FL}c,d, and \ref{fig:threshold}. 
+Supermarkets appear to reopen faster than service stations, likely due to resources provided by their parent companies.
+In Wilmington, this was a matter of days.
+Access to service stations in Wilmington was still deteriorating by the time supermarket access was almost restored (Figures \ref{fig:fig1} \& \ref{fig:threshold}).
+This is likely due to failures in the supply chains.
+However, inventory information was unavailable to us for supermarkets.
+
+In Panama City, the recovery took significantly longer for both supermarkets and service stations (Figure \ref{fig:threshold}).
+However, this comparison does not reflect differences between the cities' resilience, because the hurricanes were different. 
+Nevertheless, it is clear that Panama City suffered more and for longer.
+
+In both cities, the access to supermarkets is less than desirable (Figure \ref{fig:threshold}).
+Even before the hurricanes, only 30\% of residents in Wilmington live within 1 mile (1600 meters), which is further than the majority of distance thresholds considered acceptable (e.g., \citeA{Talen2003-dc}).
+This is worse in Panama City, but the results are skewed due to our omission of some food stores that would be included in practice.
+Regardless, this shows that there are likely service-deserts existing within the cities that could be mitigated prior to a hazard.
+
+
+\section{Application throughout the hazard cycle}
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{report/fig/Figure_hazardCycle.pdf}
+    \caption{This resilience function (aka recovery curve) shows how the access, and its distribution, may change before, during, and after a hazard. The hazard cycle shows how the EAE resilience framework can be utilized by decision-makers from mitigation to recovery.}
+    \label{fig:haz_cycle}
+\end{figure}
+EAE can enhance decision making throughout the hazard management cycle. 
+The cycle (Figure \ref{fig:haz_cycle}) involves preparing for and mitigating potential hazards; emergency response; and recovery, including the immediate rehabilitation and longer term (re)construction: opportunity development.
+
+Implementing this framework in the field will require real-time information about the functioning of services.
+For example, local networks or reporting systems could be implemented.
+This, coupled with improvements in proximity analysis \cite{Logan2017-fr, noel2019-pypi}, mean that essential service access can be evaluated before, during, and after a hazard strikes.
+This can be used to guide emergency response as well as short-term and long-term recovery and development. 
+
+\subsection{Mitigation and preparedness}
+Before any hazard occurs, existing inequities to service-deserts should be addressed.
+This will enhance community cohesion and social capital \cite{Dempsey2011-og} and enable residents to utilize all opportunities \cite{Cutter2010-vg}.
+Additionally, "what-if" simulation can determine which facilities are critical in servicing the community. 
+This type of analysis can be used to build redundancy or robustness into the system \cite{Wardekker2010-hw}.
+
+\subsection{Emergency response}
+During and immediately following a disruption, EAE enables responders to identify impacted areas and allocate resources appropriately. 
+To leverage this tool, appropriate data collection systems are needed. 
+This could be simply scraping websites such as Twitter or GasBuddy, or, ideally, could be a crowdsourced setup where facilities or the public report damage or closures, similar to the ``call 311'' system used by a number of USA cities to report non-emergency problems.
+Such data would allow the service accessibility map to be updated in real-time and would support targeting supplies like food and health care to places in need. 
+Based on population characteristics, vulnerabilities and needs could be considered so that situations such as the ignoring of vulnerable residents in the Rockaways, NY, following Hurricane Sandy \cite{Subaiya2014-qx}, do not reoccur. 
+
+\subsection{Rehabilitation} 
+During this phase, short term and basic essential services are restored \cite{Resendiz-Vazquez2019-ol}. 
+Facility reopening can be coordinated and optimized to maximize accessibility. 
+
+\subsection{Opportunity development}
+This latter phase of recovery is referred to as “opportunity development” rather than reconstruction (returning to the previous state) \cite{Resendiz-Vazquez2019-ol,Pantelic1991-qu}. 
+We should build back better \cite{Resendiz-Vazquez2019-ol} by not only enhancing protection against future hazards \cite{Platt2019-lx}, but by improving equity and residents’ quality of life \cite{Pantelic1991-qu}. 
+In this phase, urban planning must be leveraged to encourage desired amenities such as grocery stores to establish in certain locations. 
+For example, comprehensive plans can be used to set minimum numbers for food retailers, zoning mechanisms can simplify the regulatory process, and subsidies or other incentives can recruit retailers to in-need areas \cite{Raja2010-cm, Raja2008-wx}. 
+
+\section{Summary}
+\label{sec:disc}
+The urgent need for communities to build their resilience means that understanding how is among today's most impactful research questions and practical challenges \cite{Caldarice2019-tv}.
+While there has been significant work on resilience, the existing approaches are limited in the actionable insight they provide.
+The existing thinking on resilience does not focus on the provision of everyday amenities such as food, health care, and education, which are vital for residents to participate in life.
+The equitable access to essentials (EAE) resilience framework that we propose integrates key aspects of the traditional approaches to resilience and complements their use with the goal of maintaining, restoring, and improving equitable access to essential services.
+
+EAE provides a spatially explicit and hazard-general approach to quantifying resilience of access to services with a direct focus on people's well-being. 
+It involves measuring the access of residents to the services and monitoring how that access changes before, during, and after a hazard event. 
+Critical to our framework is the ability to discern how access changes between different demographics and vulnerable groups within a community.
+Equally important is that we have devised the framework in a way that promotes continuous improvement of access to all residents and transforming the system, rather than bouncing back to pre-event conditions.
+EAE has utility during all phases of the hazard cycle by providing actionable information to decision makers from preparation to post-event improvement.
+By being spatially explicit, EAE integrates resilience quantification with urban planning, which is crucial for our society's response to evolving threats exacerbated by climate change.
+
+To end-users, we reiterate that while this approach is adaptable and scalable, resilience is place-based and therefore community specific, so the application of this framework must succeed community engagement and understanding.
+
+Rethinking resilience as access to essential services promotes bounding forward, rather than bouncing back. It complements and integrates aspects of both dominant existing approaches to community resilience. We encourage transformation by shifting the focus from the state of infrastructure to the value it provides to people. This naturally enhances adaptive capacity of the community and existing capacity indicators can be used to prioritize vulnerable residents. The equitable access to essentials framework formalizes resilience in a way that enables and encourages communities to build their resilience equitably. 
+
+\backmatter
+
+% \section*{Acknowledgment}
+
+% We would like to acknowledge funding for this work provided by a University of Michigan Rackham PreDoctoral Fellowship, the US National Science Foundation (grant 1638197), and One Concern Inc. (through a grant to the University of Michigan). 
+% The majority of the research was conducted while TML was a doctoral student at the University of Michigan, Ann Arbor.
+% Additionally, we acknowledge the editorial assistance of K Miller.
+% All opinions expressed in this paper are our own.
+
+% \begin{thebibliography}{}
+% \bibliography{references.bib}
+
+\printbibliography
+% \end{thebibliography}
+
+\appendix
+
+\section{}
+\subsection{Technical guide}%\footnote{Code is available at - link redacted for blind review}}
+
+
+Tools to conduct this analysis are becoming increasingly user-friendly (e.g. \citeA{noel2019-pypi}), but currently coding ability is required. This technical appendix outlines the approach, tools, and steps:
+
+\begin{enumerate}[listparindent=0em, parsep=0.5em,itemindent=0em]
+    \item Regional data
+
+    One of the first steps is to acquire the geographic data for the region of interest. 
+    You need to decide the spatial resolution at which to conduct the analysis. 
+    Here, we use the census block level (generally equivalent in size to a city block) however this could also be conducted at the parcel or block group level. 
+    The tradeoff is the computational burden and the accuracy.
+    Also, using larger spatial areas risks overlooking vulnerable populations \cite{Logan2017-fr}.
+    Shapefiles for the USA can be downloaded from \cite{Manson2018-ug}.
+    Demographic data that can be joined to the shapefiles is available from \citeA{Manson2018-ug} or \citeA{US_Census_Bureau2017-ti}.
+    
+    \item Service/facility/amenity locations
+    
+    The geo-location of all facilities is needed for the analysis.
+    These are often available from open-data portals hosted by the city or OpenStreetMap (OSM).
+    For example, the services used in Figure \ref{fig:bal_services} were retrieved from the following locations:
+    \begin{itemize}
+        \item \textit{Schools, libraries, and hospitals}: \url{https://data.baltimorecity.gov/dataset}
+        \item \textit{Supermarkets}: \url{https://overpass-turbo.eu/} using the ``shop=supermarket" key. This data can be downloaded as a .kml file.
+    \end{itemize}
+    
+    \item Routing/Network distance
+    
+    We now require the network distance from all origins to destinations.
+    The approach we use is described in \cite{Logan2017-fr}.
+    We use OpenStreetMap (OSM) data and the Open Source Routing Machine (OSRM) \cite{luxen-vetter-2011} (\url{http://project-osrm.org/}) running via Docker \cite{Merkel2014-op} on a local server.
+    However, there are other routing algorithm options that are improving the computational speed, such as \citeA{noel2019-pypi}.
+    Instructions to set-up an OSRM server are available online, for example: \url{https://reckoningrisk.com/coding/2017/OSRM-server/}.
+    A more user-friendly approach is to install `Docker' (essentially a virtual environment) on your computer and pull (download) an OSRM server that has already been setup: \url{https://hub.docker.com/r/osrm/osrm-backend/}.
+    
+    \item Nearest service through time
+    
+    Access is currently specified as being the distance to the \textit{nearest} service (although this can and should be enhanced). 
+    Therefore, each city block is assigned the distance to each of the nearest types of service.
+    To understand how access changes through time, the facilities need to be assigned an indicator for whether it is operating.
+    For any point in time then, the distance from each block to the service is the distance to the nearest operating service.
+    
+    \item Graphical and statistical output
+    
+    The paper uses Python and ArcGIS Pro to construct the figures and maps. 
+    The code for the plotting in Python is provided in the Github repository.
+    The ECDF's are explained in \cite{Logan2017-fr}.
+    
+\end{enumerate}
+
+
+
+\end{document}
+
+
