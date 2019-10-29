@@ -8,28 +8,33 @@ import pandas as pd
 import geopandas as gpd
 import os.path
 import osgeo.ogr
-from DB_CONN import *
+# from DB_CONN import *
 import shapely
 from geoalchemy2 import Geometry, WKTElement
 import itertools
 import numpy as np
 import requests
 
-engine = create_engine('postgresql+psycopg2://postgres:resil.florida@localhost/fl?port=5444')
+state = 'nc'
+passw = 'resil.north-carolina'
+port = '5451'
 
-osrm_url = 'http://localhost:5556'
+engine = create_engine('postgresql+psycopg2://postgres:' + passw + '@localhost/' + state + '?port=' + port)
+connect_string = "host='localhost' dbname='" + state + "' user='postgres' password='" + passw + "' port='" + port + "'"
+
+osrm_url = 'http://localhost:5555'
 
 def main():
     '''
     set up the db tables I need for the querying
     '''
-    con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
+    con = psycopg2.connect(connect_string)
 
     # init the destination tables
     # create_dest_table(con)
 
     # query the distances
-    # query_points(con)
+    query_points(con)
 
     # temporal distance table (one for each destination type)
         # this will have columns: origin id,  time, and the distance to the nearest operation destination
@@ -46,7 +51,7 @@ def create_dest_table(con):
     # import the csv's
     df = pd.DataFrame()
     for dest_type in types:
-        df_type = pd.read_csv('data/destinations/' + dest_type + '_FL.csv', encoding = "ISO-8859-1", usecols = ['id','name','lat','lon'])
+        df_type = pd.read_csv('data/destinations/' + dest_type + '_' + state + '.csv', encoding = "ISO-8859-1", usecols = ['id','name','lat','lon'])
         df_type['dest_type'] = dest_type
         df = df.append(df_type)
 
@@ -82,7 +87,8 @@ def query_points(con):
     # connect to db
     cursor = con.cursor()
     # get list of all origin ids
-    sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.name = 'Panama City'"
+    # sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.name = 'Panama City'"
+    sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.gid = 4"
     orig_df = gpd.GeoDataFrame.from_postgis(sql, con, geom_col='geom')
     orig_df['x'] = orig_df.geom.centroid.x
     orig_df['y'] = orig_df.geom.centroid.y
@@ -105,7 +111,7 @@ def query_points(con):
     for index, row in origxdest.iterrows():
         # progress report
         if index/total_len in np.linspace(0,1,21):
-            print("{} percent completed querying task".format(index/total_len))
+            print("{} percent completed querying task".format(index/total_len*100))
         # prepare query
         lon_o,lat_o = orig_df.loc[row['id_orig']][['x','y']]
         lon_d,lat_d = dest_df.loc[row['id_dest']][['lon','lat']]
@@ -155,11 +161,11 @@ def import_csv(file_name, table_name,engine):
     '''
     if state=='FL':
         file_name = 'B:/research/resilience/data/nhgis/nhgis0032_ds172_2010_block.csv'
-        con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
+        # con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='" + port + "'")
         county = '005'
     else:
         file_name = 'B:/research/resilience/data/nhgis/nhgis0030_ds172_2010_block.csv'
-        con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
+        # con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='" + port + "'")
         county = '129'
     #
     table_name = 'demograph'
