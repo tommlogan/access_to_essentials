@@ -1,3 +1,8 @@
+'''
+Create the stylized pdf and cdf figures as an example of how the pdf maps to the cdf,
+and what the pdf/cdf looks like for each phase in the hazard cycle
+'''
+
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
