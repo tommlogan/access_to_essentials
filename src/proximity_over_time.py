@@ -10,12 +10,25 @@ from sqlalchemy.engine import create_engine
 from datetime import datetime, timedelta
 import itertools
 import time
+import code
+
+state = 'nc'
 
 # SQL connection
-# engine = create_engine('postgresql+psycopg2://postgres:@localhost/nc?port=5444')
-# con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
-engine = create_engine('postgresql+psycopg2://postgres:resil.florida@localhost/fl?port=5444')
-con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
+db = dict()
+db['passw'] = open('pass.txt', 'r').read().strip('\n')
+db['host'] = '132.181.102.2'
+db['port'] = '5001'
+# city information
+context = dict()
+if state == 'nc':
+    db['name'] = 'access_nc'
+    context['city_code'] = 'wil'
+    context['city'] = 'wilmington'
+
+engine = create_engine('postgresql+psycopg2://postgres:' + db['passw'] + '@' + db['host'] + '/' + db['name'] + '?port=' + db['port'])
+db['address'] = "host=" + db['host'] + " dbname=" + db['name'] + " user=postgres password='"+ db['passw'] + "' port=" + db['port']
+con = psycopg2.connect(db['address'])
 cursor = con.cursor()
 
 def populate_database():
@@ -24,7 +37,7 @@ def populate_database():
     '''
     # import outage data
     outs = {}
-    services = ['gas_station', 'super_market']
+    services = ['super_market'] #'gas_station',
     for service in services:
         outs[service] = import_outages(service)
 
@@ -52,6 +65,8 @@ def populate_database():
         # progress report
         if index in progress.keys():
             print("{0:s} ----- {1:.0f}% completed querying task".format(time.ctime(), progress[index]*100))
+            if progress[index] >0:
+                code.interact(local=locals())
         # loop services
         for service in services:
             # which stores are operating?
@@ -72,13 +87,16 @@ def populate_database():
             df_min['service'] = service
             # append
             df = df.append(df_min, ignore_index=True)
-
+    print("{0:s} ----- {1:.0f}% completed querying task".format(time.ctime(), 100))
     # add df to sql
-    df.to_sql('nearest_in_time', engine)
+    df.to_sql('nearest_florence', engine)
+    print("Added to sql")
     # add index
-    cursor.execute('CREATE INDEX on nearest_in_time (time_stamp);')
+    cursor.execute('CREATE INDEX on nearest_florence (time_stamp);')
+    print("Indexing completed")
     # commit
     con.commit()
+    print("Committed and complete")
 
 
 def import_outages(service_name):
@@ -86,7 +104,7 @@ def import_outages(service_name):
     import the station and store outages and prepare the dict
     '''
     # import data
-    with open('data/destinations/{}_operating_FL.pk'.format(service_name), 'rb') as fp:
+    with open('data/{}_{}.pk'.format(service_name,state), 'rb') as fp:
         outages = pk.load(fp)
     # convert to dict for faster querying
     dict = {d['datetime']:d['operational_ids'] for d in outages}

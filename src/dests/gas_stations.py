@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 import pickle as pk
 
 
-state = 'FL'
+state = 'nc'
 # import data
-fname = 'gas_station_operating_FL'
-df = pd.read_csv('data/destinations/{}.csv'.format(fname))
+fname = 'gas_station_{}'.format(state)
+df = pd.read_csv('data/{}.csv'.format(fname))
 
 # convert appropriate columns to time
 df.time = pd.to_datetime(df.time, dayfirst = True)
@@ -97,5 +97,5 @@ for i in range(time_steps):
 
 
 # save list of operational stations over time
-with open('data/destinations/{}.pk'.format(fname),'wb') as fp:
+with open('data/{}.pk'.format(fname),'wb') as fp:
     pk.dump(stations_over_time, fp)

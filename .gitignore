@@ -1,5 +1,24 @@
+# directories
 data
 venv
+figure
+fig
+presentation
+submission
+_scratch
+comments
+
+# file types
+*.ini
+*.pdf
+*.gdoc
+*.pptx
+*.docx
+*.gslides
+*.xlsx
+*.png
 __pycache__
 *.ai
-fig
+
+# files
+pass.txt

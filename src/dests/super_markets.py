@@ -8,11 +8,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle as pk
 
-state = 'FL'
+state = 'nc'
 
 # import data
-fname = 'super_market_operating_FL'
-df = pd.read_csv('data/destinations/{}.csv'.format(fname), encoding = "ISO-8859-1")
+fname = 'super_market_nc'
+df = pd.read_csv('data/{}.csv'.format(fname), encoding = "ISO-8859-1")
 df = df.dropna(how='all')
 
 # convert appropriate columns to time
@@ -60,5 +60,5 @@ for i in range(time_steps):
     time_record += timedelta(hours=1)
 
 # save list of operational stations over time
-with open('data/destinations/{}.pk'.format(fname),'wb') as fp:
+with open('data/{}.pk'.format(fname),'wb') as fp:
     pk.dump(stores_over_time, fp)
