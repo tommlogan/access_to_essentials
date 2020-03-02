@@ -39,24 +39,20 @@ for me this gives a distance of 10950m and a duration of 7964.6 (7964.6/60=132.7
 and restart it with ``docker restart osrm-md``
 
 ### Creating the PostGres database
+* connect to the database server
 * create the db
-``docker run --name md-db -p 5445:5432 -v pg_data:/var/lib/postgresql -e POSTGRES_PASSWORD='resil.maryland' -d mdillon/postgis``
+`CREATE DATABASE access_fl_pan;`  
 * init postgis
-``docker run -it --link md-db:postgres --rm postgres sh -c 'exec psql -h "$POSTGRES_PORT_5432_TCP_ADDR" -p "$POSTGRES_PORT_5432_TCP_PORT" -U postgres'``  
-`CREATE DATABASE md;`  
 `\c md;`  
 `CREATE EXTENSION postgis;`  
 `\q`
 
 ### Add the city block data to the database
-* you need the EPSG code. For Maryland it is 2248: http://spatialreference.org/ref/epsg/2248/
-	sometimes this isn't right either?? So open the shapefile in ArcGIS Pro, open the layer properties, source, spatial reference, WKID: 4269
-* add the state's block shapefile
+* ideally clip the block data to the boundary of the region you want to evaluate
+* before adding to the db you need the EPSG code. You can find this in the shapefile metadata: open ArcGIS Pro, open the layer properties, source, spatial reference, WKID: 4269
 * enter bash
 * cd to directory with shapefile
-`shp2pgsql -I -s 4269 tl_2010_24510_tabblock10.shp block | psql -U postgres -d md -h localhost -p 5445`
-* now add the municipality of interest's boundary
-* I don't think I need to do this if I am using a county line, I need to check the block shapefile columns for their ID (basically need something to subset on)
+* `shp2pgsql -I -s 4269 pan_block.shp block | psql -U postgres -d access_fl_pan -h 132.181.102.2 -p 5001`
 
 ### Add the city demographic data to the db
 * download the data from the IPUMS NHGIS site (use my extract history: block level shapefile for the state and a csv for the racial composition of the blocks)

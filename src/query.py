@@ -1,57 +1,60 @@
 '''
-Here the db tables are initialized for the analysis
+Init the database
+Query origins to dests in OSRM
 '''
+# user defined variables
+state = input('State: ')
+par = True
+par_frac = 0.8
 
-from sqlalchemy.engine import create_engine
-import psycopg2
-import pandas as pd
-import geopandas as gpd
+from config import *
+db, context = cfg_init(state)
+logger = logging.getLogger(__name__)
 import os.path
 import osgeo.ogr
-# from DB_CONN import *
 import shapely
 from geoalchemy2 import Geometry, WKTElement
-import itertools
-import numpy as np
 import requests
+from sqlalchemy.types import Float, Integer
+import yagmail
+if par == True:
+    import multiprocessing as mp
+    from joblib import Parallel, delayed
+    from requests.adapters import HTTPAdapter
+    from requests.packages.urllib3.util.retry import Retry
 
-state = 'nc'
-passw = 'resil.north-carolina'
-port = '5451'
-
-engine = create_engine('postgresql+psycopg2://postgres:' + passw + '@localhost/' + state + '?port=' + port)
-connect_string = "host='localhost' dbname='" + state + "' user='postgres' password='" + passw + "' port='" + port + "'"
-
-osrm_url = 'http://localhost:5555'
-
-def main():
+def main(db, context):
     '''
     set up the db tables I need for the querying
     '''
-    con = psycopg2.connect(connect_string)
 
     # init the destination tables
-    # create_dest_table(con)
+    create_dest_table(db)
 
     # query the distances
-    query_points(con)
+    query_points(db, context)
 
-    # temporal distance table (one for each destination type)
-        # this will have columns: origin id,  time, and the distance to the nearest operation destination
-    create_temporal_distance(con)
+    # close the connection
+    db['con'].close()
+    logger.info('Database connection closed')
 
+    # email completion notification
+    utils.send_email(body='Querying {} complete'.format(context['city']))
 
-    con.close()
 
 def create_dest_table(con):
     '''
     create a table with the supermarkets and groceries
     '''
-    types = ['gas_station','super_market_operating']
+    # db connections
+    con = db['con']
+    engine = db['engine']
+    # destinations and locations
+    types = ['gas_station','supermarket']
     # import the csv's
     df = pd.DataFrame()
     for dest_type in types:
-        df_type = pd.read_csv('data/destinations/' + dest_type + '_' + state + '.csv', encoding = "ISO-8859-1", usecols = ['id','name','lat','lon'])
+        df_type = pd.read_csv('data/destinations/' + dest_type + '.csv', encoding = "ISO-8859-1", usecols = ['id','name','lat','lon'])
         df_type['dest_type'] = dest_type
         df = df.append(df_type)
 
@@ -85,11 +88,11 @@ def query_points(con):
     query OSRM for distances between origins and destinations
     '''
     # connect to db
-    cursor = con.cursor()
+    cursor = db['con'].cursor()
+
     # get list of all origin ids
-    # sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.name = 'Panama City'"
-    sql = "SELECT block.geoid10, block.geom FROM block, city WHERE ST_Intersects(block.geom, ST_Transform(city.geom, 4269)) AND city.gid = 4"
-    orig_df = gpd.GeoDataFrame.from_postgis(sql, con, geom_col='geom')
+    sql = "SELECT * FROM block"
+    orig_df = gpd.GeoDataFrame.from_postgis(sql, db['con'], geom_col='geom')
     orig_df['x'] = orig_df.geom.centroid.x
     orig_df['y'] = orig_df.geom.centroid.y
     # drop duplicates
@@ -97,74 +100,93 @@ def query_points(con):
     orig_df.drop_duplicates(inplace=True)
     # set index
     orig_df = orig_df.set_index('geoid10')
+
     # get list of destination ids
-    sql = "SELECT id, lat, lon FROM destinations"
-    dest_df = pd.read_sql(sql, con)
+    sql = "SELECT * FROM destinations"
+    dest_df = gpd.GeoDataFrame.from_postgis(sql, db['con'], geom_col='geom')
     dest_df = dest_df.set_index('id')
+    dest_df['lon'] = dest_df.geom.centroid.x
+    dest_df['lat'] = dest_df.geom.centroid.y
+
     # list of origxdest pairs
     origxdest = pd.DataFrame(list(itertools.product(orig_df.index, dest_df.index)), columns = ['id_orig','id_dest'])
     origxdest['distance'] = None
+
+    # build query list:
+    query_0 = np.full(fill_value = context['osrm_url'] + '/route/v1/driving/', shape=origxdest.shape[0], dtype = object)
+    # the query looks like this: '{}/route/v1/driving/{},{};{},{}?overview=false'.format(osrm_url, lon_o, lat_o, lon_d, lat_d)
+    queries = query_0 + np.array(orig_df.loc[origxdest['id_orig'].values]['x'].values, dtype = str) + ',' + np.array(orig_df.loc[origxdest['id_orig'].values]['y'].values, dtype = str) + ';' + np.array(dest_df.loc[origxdest['id_dest'].values]['lon'].values, dtype = str) + ',' + np.array(dest_df.loc[origxdest['id_dest'].values]['lat'].values, dtype = str) + '?overview=false'
     ###
     # loop through the queries
     ###
-    total_len = origxdest.shape[0]
-    for index, row in origxdest.iterrows():
-        # progress report
-        if index/total_len in np.linspace(0,1,21):
-            print("{} percent completed querying task".format(index/total_len*100))
-        # prepare query
-        lon_o,lat_o = orig_df.loc[row['id_orig']][['x','y']]
-        lon_d,lat_d = dest_df.loc[row['id_dest']][['lon','lat']]
-        # query
-        query = '{}/route/v1/driving/{},{};{},{}?overview=false'.format(osrm_url, lon_o, lat_o, lon_d, lat_d)
-        r = requests.get(query)
-        origxdest.loc[index,'distance'] = r.json()['routes'][0]['legs'][0]['distance']
+    logger.info('Beginning to query {}'.format(context['city']))
+    total_len = len(queries)
+    if par == True:
+        # Query OSRM in parallel
+        num_workers = np.int(mp.cpu_count() * par_frac)
+        distances = Parallel(n_jobs=num_workers)(delayed(single_query)(query) for query in tqdm(queries))
+        # input distance into df
+        origxdest['distance'] = distances
+    else:
+        for index, query in enumerate(tqdm(queries)):
+            # single query
+            r = requests.get(query)
+            # input distance into df
+            origxdest.loc[index,'distance'] = r.json()['routes'][0]['legs'][0]['distance']
+    logger.info('Querying complete')
+
     # add df to sql
-    origxdest.to_sql('distance_matrix', engine)
-    # add index
-    cursor.execute('CREATE INDEX on distance_matrix (id_orig);')
-    # commit
-    con.commit()
-
-
-def create_temporal_distance(con):
-    '''
-    create the origin_nearest distance table for time
-    '''
-    # connect to db
-    cursor = con.cursor()
-    # sql query
-    queries = ['''CREATE TABLE IF NOT EXISTS nearest_in_time (
-                orig_id INT NOT NULL,
-                dest_id INT NOT NULL,
-                distance INT,
-                date_time TIMESTAMP,
-                dest_type VARCHAR);''',
-            'CREATE INDEX on nearest_in_time (date_time);']
-    # run the queries
+    logger.info('Writing data to SQL')
+    origxdest.to_sql('distance', con=db['engine'], if_exists='replace', index=False, dtype={"distance":Float(), 'id_dest':Integer()})
+    # update indices
+    queries = ['CREATE INDEX "dest_idx" ON distance ("id_dest");',
+            'CREATE INDEX "orig_idx" ON distance ("id_orig");']
     for q in queries:
         cursor.execute(q)
-    # commit
-    con.commit()
+
+    # commit to db
+    db['con'].commit()
+    logger.info('Distances written successfully to SQL')
 
 
-def add_column_demograph(con):
+def single_query(query):
     '''
-    Add a useful geoid10 column to join data with
+    this is for if we want it parallel
+    query a value and add to the table
     '''
-    queries = ['ALTER TABLE demograph ADD COLUMN geoid10 CHAR(15)',
-                '']
+    # query
+    # dist = requests.get(query).json()['routes'][0]['legs'][0]['distance']
+    dist = requests_retry_session(retries=100, backoff_factor=0.01, status_forcelist=(500, 502, 504), session=None).get(query).json()['routes'][0]['legs'][0]['distance']
+    # dist = r.json()['routes'][0]['legs'][0]['distance']
+    return(dist)
 
-def import_csv(file_name, table_name,engine):
+
+def requests_retry_session(retries=10, backoff_factor=0.1, status_forcelist=(500, 502, 504), session=None):
+    '''
+    When par ==True, issues with connecting to the docker, can change the retries to keep trying to connect
+    '''
+    session = session or requests.Session()
+    retry = Retry(total=retries, read=retries, connect=retries, backoff_factor=backoff_factor, status_forcelist=status_forcelist)
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
+
+
+def import_csv(db):
     '''
     import a csv into the postgres db
     '''
-    if state=='FL':
-        file_name = 'B:/research/resilience/data/nhgis/nhgis0032_ds172_2010_block.csv'
+    # db connections
+    con = db['con']
+    engine = db['engine']
+
+    if state=='fl':
+        file_name = 'data/pan/nhgis0038_ds172_2010_block.csv'
         # con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='" + port + "'")
         county = '005'
     else:
-        file_name = 'B:/research/resilience/data/nhgis/nhgis0030_ds172_2010_block.csv'
+        file_name = 'data/nc/nhgis0030_ds172_2010_block.csv'
         # con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='" + port + "'")
         county = '129'
     #
@@ -173,9 +195,13 @@ def import_csv(file_name, table_name,engine):
     df = pd.read_csv(file_name, dtype = {'STATEA':str, 'COUNTYA':str,'TRACTA':str,'BLOCKA':str, 'H7X001':int, 'H7X002':int, 'H7X003':int, 'H7X004':int})
     df = df[df.COUNTYA==county]
     df['geoid10'] = df['STATEA'] + df['COUNTYA'] + df['TRACTA'] + df['BLOCKA']
+    import code
+    code.interact(local=locals())
     df.to_sql(table_name, engine)
-    # add the table indices
 
+
+
+    # add the table indices
     cursor = con.cursor()
     queries = ['CREATE INDEX "geoid10" ON demograph ("geoid10");',
             'CREATE INDEX "id" ON demograph ("BLOCKA");']
@@ -185,6 +211,20 @@ def import_csv(file_name, table_name,engine):
     con.commit()
 
 
+def send_email(body):
+    # send an email
+
+    receiver = "tom.logan@canterbury.ac.nz"
+
+    yag = yagmail.SMTP('toms.scrapers',open('pass_email.txt', 'r').read().strip('\n'))
+    yag.send(
+        to=receiver,
+        subject="Query complete",
+        contents=body,
+        # attachments=filename,
+    )
+
 
 if __name__ == "__main__":
-    main()
+    main(db, context)
+    # import_csv(db)

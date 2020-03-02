@@ -21,4 +21,5 @@ __pycache__
 *.ai
 
 # files
-pass.txt
+pass*
+.ftpconfig
