@@ -12,7 +12,7 @@ import pickle as pk
 state = 'nc'
 # import data
 fname = 'gas_station_{}'.format(state)
-df = pd.read_csv('data/{}.csv'.format(fname))
+df = pd.read_csv('data/operating/{}.csv'.format(fname))
 
 # convert appropriate columns to time
 df.time = pd.to_datetime(df.time, dayfirst = True)
@@ -97,5 +97,5 @@ for i in range(time_steps):
 
 
 # save list of operational stations over time
-with open('data/{}.pk'.format(fname),'wb') as fp:
+with open('data/operating/{}.pk'.format(fname),'wb') as fp:
     pk.dump(stations_over_time, fp)

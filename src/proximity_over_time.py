@@ -37,7 +37,7 @@ def populate_database():
     '''
     # import outage data
     outs = {}
-    services = ['super_market'] #'gas_station',
+    services = ['gas_station','super_market']
     for service in services:
         outs[service] = import_outages(service)
 
@@ -65,8 +65,6 @@ def populate_database():
         # progress report
         if index in progress.keys():
             print("{0:s} ----- {1:.0f}% completed querying task".format(time.ctime(), progress[index]*100))
-            if progress[index] >0:
-                code.interact(local=locals())
         # loop services
         for service in services:
             # which stores are operating?
@@ -104,7 +102,7 @@ def import_outages(service_name):
     import the station and store outages and prepare the dict
     '''
     # import data
-    with open('data/{}_{}.pk'.format(service_name,state), 'rb') as fp:
+    with open('data/operating/{}_{}.pk'.format(service_name,state), 'rb') as fp:
         outages = pk.load(fp)
     # convert to dict for faster querying
     dict = {d['datetime']:d['operational_ids'] for d in outages}
