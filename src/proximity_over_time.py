@@ -1,43 +1,24 @@
 '''
 Populate the database for the nearest proximity throughout time
 '''
+state = 'fl'
+from config import *
+db, context = cfg_init(state)
+logger = logging.getLogger(__name__)
 
-import pickle as pk
-import pandas as pd
-import numpy as np
-import psycopg2
-from sqlalchemy.engine import create_engine
-from datetime import datetime, timedelta
-import itertools
-import time
-import code
 
-state = 'nc'
 
-# SQL connection
-db = dict()
-db['passw'] = open('pass.txt', 'r').read().strip('\n')
-db['host'] = '132.181.102.2'
-db['port'] = '5001'
-# city information
-context = dict()
-if state == 'nc':
-    db['name'] = 'access_nc'
-    context['city_code'] = 'wil'
-    context['city'] = 'wilmington'
-
-engine = create_engine('postgresql+psycopg2://postgres:' + db['passw'] + '@' + db['host'] + '/' + db['name'] + '?port=' + db['port'])
-db['address'] = "host=" + db['host'] + " dbname=" + db['name'] + " user=postgres password='"+ db['passw'] + "' port=" + db['port']
-con = psycopg2.connect(db['address'])
-cursor = con.cursor()
-
-def populate_database():
+def populate_database(db):
     '''
     Loop through time and determine closest
     '''
+    # db connections
+    con = db['con']
+    engine = db['engine']
+    cursor = db['con'].cursor()
     # import outage data
     outs = {}
-    services = ['gas_station','super_market']
+    services = ['gas_station','supermarket']
     for service in services:
         outs[service] = import_outages(service)
 
@@ -48,7 +29,7 @@ def populate_database():
     times = sorted(outs[services[0]].keys())
 
     # get the distance matrix
-    distances = pd.read_sql('SELECT * FROM distance_matrix', con)
+    distances = pd.read_sql('SELECT * FROM distance', con)
     distances = distances.set_index('id_dest')
     distances.distance = pd.to_numeric(distances.distance)
 
@@ -87,14 +68,14 @@ def populate_database():
             df = df.append(df_min, ignore_index=True)
     print("{0:s} ----- {1:.0f}% completed querying task".format(time.ctime(), 100))
     # add df to sql
-    df.to_sql('nearest_florence', engine)
-    print("Added to sql")
+    df.to_sql(context['nearest_db_name'], engine)
+    logger.info('Added to sql')
     # add index
-    cursor.execute('CREATE INDEX on nearest_florence (time_stamp);')
-    print("Indexing completed")
+    cursor.execute('CREATE INDEX on {} (time_stamp);'.format(context['nearest_db_name']))
+    logger.info('Indexing completed')
     # commit
     con.commit()
-    print("Committed and complete")
+    logger.info('Committed and complete')
 
 
 def import_outages(service_name):
@@ -102,7 +83,7 @@ def import_outages(service_name):
     import the station and store outages and prepare the dict
     '''
     # import data
-    with open('data/operating/{}_{}.pk'.format(service_name,state), 'rb') as fp:
+    with open('data/{}/destination/{}.pk'.format(context['city_code'], service_name), 'rb') as fp:
         outages = pk.load(fp)
     # convert to dict for faster querying
     dict = {d['datetime']:d['operational_ids'] for d in outages}
@@ -128,4 +109,4 @@ def init_df(services, outs):
     return(df)
 
 if __name__ == "__main__":
-    populate_database()
+    populate_database(db)

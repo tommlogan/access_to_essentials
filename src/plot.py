@@ -1,27 +1,19 @@
-import geopandas as gpd
-from math import *
-import numpy as np
-import pandas as pd
-import psycopg2
-from datetime import datetime
+# user defined variables
+state = 'nc' #input('State: ')
+service = 'gas_station'#'gas_station'
+
+from config import *
+db, context = cfg_init(state)
+logger = logging.getLogger(__name__)
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import pickle as pk
-import itertools
-import code
-import os
+import matplotlib.style as style
 
-state = 'fl'
+from matplotlib import cm
+import datetime
+
 save_to_sf = True
-
-# connect to database
-if state == 'nc':
-    con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
-else:
-    con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
-cursor = con.cursor()
-
-
 # define the plotting style
 plt.style.use(['tableau-colorblind10'])#,'dark_background'])
 fig_transparency = False
@@ -33,7 +25,7 @@ params = {'axes.labelsize': font_size, # fontsize for x and y labels (was 10)
           'font.size': font_size, # was 10
           'legend.fontsize': font_size * 2/3, # was 10
           'xtick.labelsize': font_size,
-          'font.sans-serif' : 'Corbel',
+          'font.family' : 'Myriad Pro',
           # 'ytick.labelsize': 0,
           'lines.linewidth' : 1,
           'figure.autolayout' : True,
@@ -58,8 +50,7 @@ def main():
     '''
     plots
     '''
-
-    services = ['super_market','gas_station']#, 'super_market']
+    services = ['supermarket','gas_station']#, 'super_market']
     # import the service operational ids over time
     operating = {}
     for service in services:
@@ -112,7 +103,7 @@ def choropleth_city(time_stamp, service, operating, save_to_sf = False):
     # code.interact(local=locals())
     dests.loc[ids_open, 'Operational']  = True
     # import the distance to the nearest service for this time
-    sql = 'SELECT distance, id_orig FROM nearest_in_time WHERE time_stamp = %s AND service = %s'
+    sql = 'SELECT distance, id_orig FROM {} WHERE time_stamp = %s AND service = %s'.format(context['nearest_db_name'])
     dist = pd.read_sql(sql, con, params = (time_stamp, service,))
     # merge distance into blocks
     df = df.merge(dist, left_on = 'geoid10', right_on = 'id_orig')
@@ -239,6 +230,10 @@ def resilience_curve(service, operating, time_stamp):
     '''
     Plot the resilience curve
     '''
+    # db connection
+    con = db['con']
+    cursor = con.cursor()
+    # timestamp
     time_stamp_line = time_stamp
     # percentiles
     percentiles = np.linspace(0,1,11)[1:-1]
@@ -275,22 +270,24 @@ def resilience_curve(service, operating, time_stamp):
     plt.axvline(x=time_stamp_line, color = 'k')
     # land fall
     if state == 'fl':
-        plt.axvline(datetime(2018,10,10,12,0),ls='--', color = 'k')
+        plt.axvline(datetime.datetime(2018,10,10,12,0),ls='--', color = 'k')
         # plt.text(datetime(2018,10,10,20,0), 500,'landfall')
-        plt.xlim([None, datetime(2018,11,9,12,0)])
-        x_len = df.index[df.time_stamp == datetime(2018,11,9,0,0)].tolist()[0]
+        plt.xlim([None, datetime.datetime(2018,11,9,12,0)])
+        x_len = df.index[df.time_stamp == datetime.datetime(2018,11,9,0,0)].tolist()[0]
         # x_len = len(df.time_stamp)-1
     else:
-        plt.axvline(datetime(2018,9,14,7,0),ls='--', color = 'k', linewidth=0.5)
+        plt.axvline(datetime.datetime(2018,9,14,7,0),ls='--', color = 'k', linewidth=0.5)
         # plt.text(datetime(2018,9,11,0,0), 3.5,'Hurricane Florence \n landfall', fontsize=5)
-        plt.xlim([None, datetime(2018,9,29,0,0)])
-        x_len = df.index[df.time_stamp == datetime(2018,9,29,0,0)].tolist()[0]
+        plt.xlim([None, datetime.datetime(2018,9,29,0,0)])
+        x_len = df.index[df.time_stamp == datetime.datetime(2018,9,29,0,0)].tolist()[0]
     # x ticks
     x_dummy = np.linspace(0,x_len,4)
     # code.interact(local=locals())
-    t_dummy = [df.time_stamp[int(i)].date().strftime("%d-%b-%Y") for i in x_dummy]
-    t_dummy2 = [df.time_stamp[int(i)].date().strftime("%d-%b") for i in x_dummy]
-    plt.xticks(t_dummy, t_dummy2, rotation=0)
+    x_locs = [df.time_stamp[int(i)].date().strftime("%d-%b-%Y") for i in x_dummy]
+    x_locs = [datetime.datetime.strptime(i,"%d-%b-%Y") for i in x_locs]
+    x_labels = [df.time_stamp[int(i)].date().strftime("%d-%b") for i in x_dummy]
+    # x_labels = [dist_id.time_stamp[int(i)].date().strftime("%d-%b") for i in x_dummy]
+    plt.xticks(ticks=x_locs, labels=x_labels, rotation=0)
     # ylabel
     # plt.ylim([0,4])
 
@@ -299,8 +296,9 @@ def resilience_curve(service, operating, time_stamp):
         plt.ylabel('Km to open facility')
     else:
         plt.ylabel('Km to open facility')
-        # plt.ylim([None,9])
+
         # plt.yticks([2,5,8])
+    plt.ylim([0,None])
     plt.gca().invert_yaxis()
     # legend
     # plt.legend(loc='lower right')
@@ -318,8 +316,10 @@ def calc_ecdf(time_stamp, service, operating):
     '''
     calculate the ecdf at a certain time
     '''
+    # db connection
+    con = db['con']
     # import the distance to the nearest service for this time
-    sql = 'SELECT distance, id_orig FROM nearest_in_time WHERE time_stamp = %s AND service = %s'
+    sql = "SELECT distance, id_orig FROM {} WHERE time_stamp = %s AND service = %s".format(context['nearest_db_name'])
     dist = pd.read_sql(sql, con, params = (time_stamp, service,))
     # import number of people
     sql = 'SELECT "H7X001", "H7X002", geoid10 FROM demograph;'
@@ -348,9 +348,9 @@ def import_operating(service_name):
     '''
     # import data
     if state=='fl':
-        in_name = 'data/destinations/{}_operating_FL.pk'
+        in_name = 'data/pan/destination/{}.pk'
     else:
-        in_name = 'data/destinations/{}_operating.pk'
+        in_name = 'data/wil/destination/{}.pk'
     with open(in_name.format(service_name), 'rb') as fp:
         operating = pk.load(fp)
     # convert to dict for faster querying

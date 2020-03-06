@@ -29,7 +29,7 @@ def main(db, context):
     '''
 
     # init the destination tables
-    create_dest_table(db)
+    # create_dest_table(db)
 
     # query the distances
     query_points(db, context)
@@ -39,13 +39,14 @@ def main(db, context):
     logger.info('Database connection closed')
 
     # email completion notification
-    utils.send_email(body='Querying {} complete'.format(context['city']))
+    send_email(body='Querying {} complete'.format(context['city']))
 
 
 def create_dest_table(con):
     '''
     create a table with the supermarkets and groceries
     '''
+    logger.info('Adding destinaton data to SQL')
     # db connections
     con = db['con']
     engine = db['engine']
@@ -54,7 +55,7 @@ def create_dest_table(con):
     # import the csv's
     df = pd.DataFrame()
     for dest_type in types:
-        df_type = pd.read_csv('data/destinations/' + dest_type + '.csv', encoding = "ISO-8859-1", usecols = ['id','name','lat','lon'])
+        df_type = pd.read_csv('data/' + context['city_code'] + '/destination/' + dest_type + '.csv', encoding = "ISO-8859-1", usecols = ['id','name','lat','lon'])
         df_type['dest_type'] = dest_type
         df = df.append(df_type)
 
@@ -81,9 +82,10 @@ def create_dest_table(con):
         cursor.execute(q)
     # commit to db
     con.commit()
+    logger.info('Destinaton data added to SQL')
 
 
-def query_points(con):
+def query_points(db, context):
     '''
     query OSRM for distances between origins and destinations
     '''

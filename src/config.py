@@ -45,12 +45,14 @@ def cfg_init(state):
         # url to the osrm routing machine
         context['osrm_url'] = 'http://localhost:6002'
         context['services'] = ['supermarket', 'gas_station']
+        context['nearest_db_name'] = 'nearest_florence'
     elif state == 'fl':
         db['name'] = 'access_fl_pan'
         context['city_code'] = 'pan'
         context['city'] = 'Panama_City'
         context['osrm_url'] = 'http://localhost:6012'
         context['services'] = ['supermarket', 'gas_station']
+        context['nearest_db_name'] = 'nearest_michael'
     # connect to database
     db['engine'] = create_engine('postgresql+psycopg2://postgres:' + db['passw'] + '@' + db['host'] + '/' + db['name'] + '?port=' + db['port'])
     db['address'] = "host=" + db['host'] + " dbname=" + db['name'] + " user=postgres password='"+ db['passw'] + "' port=" + db['port']

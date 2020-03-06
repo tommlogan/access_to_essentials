@@ -1,25 +1,22 @@
-import geopandas as gpd
-from math import *
-import numpy as np
-import pandas as pd
-import psycopg2
-from datetime import datetime
+# user defined variables
+state = 'fl' #input('State: ')
+service = 'gas_station'#'gas_station'
+
+from config import *
+db, context = cfg_init(state)
+logger = logging.getLogger(__name__)
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import pickle as pk
-import itertools
-import code
-import os
+import matplotlib.style as style
 
-state = 'nc'
+from matplotlib import cm
+import datetime
+from math import *
 
-# connect to database
-if state == 'nc':
-    con = psycopg2.connect("host='localhost' dbname='nc' user='postgres' password='' port='5444'")
-else:
-    con = psycopg2.connect("host='localhost' dbname='fl' user='postgres' password='resil.florida' port='5444'")
+# db connection
+con = db['con']
 cursor = con.cursor()
-
 
 # define the plotting style
 plt.style.use(['tableau-colorblind10'])#,'dark_background'])
@@ -52,7 +49,7 @@ def main():
     plots
     '''
 
-    services = ['gas_station','super_market']#,'gas_station']
+    services = ['gas_station','supermarket']#,'gas_station']
     # import the service operational ids over time
     operating = {}
     for service in services:
@@ -93,7 +90,7 @@ def determine_quintile(time_stamp, service, operating):
     calculate the ecdf at a certain time
     '''
     # import the distance to the nearest service for this time
-    sql = 'SELECT distance, id_orig FROM nearest_in_time WHERE time_stamp = %s AND service = %s'
+    sql = 'SELECT distance, id_orig FROM {} WHERE time_stamp = %s AND service = %s'.format(context['nearest_db_name'])
     dist = pd.read_sql(sql, con, params = (time_stamp, service,))
     # import number of people
     sql = 'SELECT "H7X001", "H7X002", geoid10 FROM demograph;'
@@ -167,23 +164,24 @@ def resilience_curve(service, operating, time_stamp, access_quintiles):
     # plt.axvline(x=time_stamp_line, color = 'k')
     # # land fall
     if state == 'fl':
-        plt.axvline(datetime(2018,10,10,12,0),ls='--', color = 'k', linewidth=0.5)
+        plt.axvline(datetime.datetime(2018,10,10,12,0),ls='--', color = 'k', linewidth=0.5)
         # plt.text(datetime(2018,10,10,20,0), 3.5,'landfall', fontsize=5)
-        plt.xlim([None, datetime(2018,11,9,12,0)])
-        x_len = df.index[df.time_stamp == datetime(2018,11,9,0,0)].tolist()[0]
+        plt.xlim([None, datetime.datetime(2018,11,9,12,0)])
+        x_len = df.index[df.time_stamp == datetime.datetime(2018,11,9,0,0)].tolist()[0]
     else:
-        plt.axvline(datetime(2018,9,14,7,0),ls='--', color = 'k', linewidth=0.5)
+        plt.axvline(datetime.datetime(2018,9,14,7,0),ls='--', color = 'k', linewidth=0.5)
         # plt.xlim([None, datetime(2018,9,29,0,0)])
         # x_len = df.index[df.time_stamp == datetime(2018,9,29,0,0)].tolist()[0]
-        plt.xlim([None, datetime(2018,10,9,0,0)])
-        x_len = df.index[df.time_stamp == datetime(2018,10,9,0,0)].tolist()[0]
+        plt.xlim([None, datetime.datetime(2018,10,9,0,0)])
+        x_len = df.index[df.time_stamp == datetime.datetime(2018,10,9,0,0)].tolist()[0]
      #   plt.text(datetime(2018,9,11,0,0), 3.5,'landfall', fontsize=5)
     # x ticks
     x_dummy = np.linspace(0,x_len,4)
-    # code.interact(local=locals())
-    t_dummy = [df.time_stamp[int(i)].date().strftime("%d-%b-%Y") for i in x_dummy]
-    t_dummy2 = [df.time_stamp[int(i)].date().strftime("%d-%b") for i in x_dummy]
-    plt.xticks(t_dummy, t_dummy2, rotation=0)
+    x_locs = [df.time_stamp[int(i)].date().strftime("%d-%b-%Y") for i in x_dummy]
+    x_locs = [datetime.datetime.strptime(i,"%d-%b-%Y") for i in x_locs]
+    x_labels = [df.time_stamp[int(i)].date().strftime("%d-%b") for i in x_dummy]
+    # x_labels = [dist_id.time_stamp[int(i)].date().strftime("%d-%b") for i in x_dummy]
+    plt.xticks(ticks=x_locs, labels=x_labels, rotation=0)
     # ylabel
     # plt.ylim([3,9])
     if service == 'gas_station':
@@ -215,7 +213,7 @@ def calc_ecdf(time_stamp, service, operating):
     calculate the ecdf at a certain time
     '''
     # import the distance to the nearest service for this time
-    sql = 'SELECT distance, id_orig FROM nearest_in_time WHERE time_stamp = %s AND service = %s'
+    sql = 'SELECT distance, id_orig FROM {} WHERE time_stamp = %s AND service = %s'.format(context['nearest_db_name'])
     dist = pd.read_sql(sql, con, params = (time_stamp, service,))
     # import number of people
     sql = 'SELECT "H7X001", "H7X002", geoid10 FROM demograph;'
@@ -245,9 +243,9 @@ def import_operating(service_name):
     '''
     # import data
     if state=='fl':
-        in_name = 'data/destinations/{}_operating_FL.pk'
+        in_name = 'data/pan/destination/{}.pk'
     else:
-        in_name = 'data/destinations/{}_operating.pk'
+        in_name = 'data/wil/destination/{}.pk'
     with open(in_name.format(service_name), 'rb') as fp:
         operating = pk.load(fp)
     # convert to dict for faster querying
