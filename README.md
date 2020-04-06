@@ -8,6 +8,7 @@ Logan, T. M. & Guikema, S. D. Reframing Resilience: Equitable Access to Essentia
 
 This repo provides information and code on how to conduct the equitable access to essentials (EAE) approach to community resilience.
 
+![Example for Wilmington, North Carolina](/report/fig/NC_supermarket_resilience.png)
 
 ## Files
 
