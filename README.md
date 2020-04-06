@@ -1,10 +1,10 @@
-# Resilience as access to essential services: A Framework and Approach for Measurement
+# Resilience as access to essential services: A Methodology and Approach for Measuring and Operationalizing Community Resilience
 
 Tom M Logan  
 www.tomlogan.co.nz
 
 #### Please cite this code as:  
-
+Logan, T. M. & Guikema, S. D. Reframing Resilience: Equitable Access to Essential Services. Risk Analysis (2020)
 
 This repo provides information and code on how to conduct the equitable access to essentials (EAE) approach to community resilience.
 
